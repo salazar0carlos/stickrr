@@ -1,10 +1,14 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
 import type { TextElement, ShapeElement } from '@/types/designer'
 import { HexColorPicker } from 'react-colorful'
+import { FONT_FAMILIES } from '@/lib/designerConstants'
+import RecentColors from './RecentColors'
 import { ChevronDown } from 'lucide-react'
+
+const MAX_RECENT_COLORS = 12
 
 export default function PropertiesPanel() {
   const elements = useDesignerStore((state) => state.elements)
@@ -13,7 +17,15 @@ export default function PropertiesPanel() {
 
   const selectedElement = elements.find((el) => el.id === selectedIds[0])
 
-  const [showColorPicker, setShowColorPicker] = React.useState<string | null>(null)
+  const [showColorPicker, setShowColorPicker] = useState<string | null>(null)
+  const [recentColors, setRecentColors] = useState<string[]>([])
+
+  const addToRecentColors = (color: string) => {
+    setRecentColors((prev) => {
+      const filtered = prev.filter((c) => c !== color)
+      return [color, ...filtered].slice(0, MAX_RECENT_COLORS)
+    })
+  }
 
   if (!selectedElement) {
     return (
@@ -35,6 +47,21 @@ export default function PropertiesPanel() {
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           rows={3}
         />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Font Family</label>
+        <select
+          value={element.fontFamily}
+          onChange={(e) => updateElement(element.id, { fontFamily: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+        >
+          {FONT_FAMILIES.map((font) => (
+            <option key={font} value={font} style={{ fontFamily: font }}>
+              {font}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -77,10 +104,20 @@ export default function PropertiesPanel() {
             <span className="text-sm text-gray-700 uppercase">{element.color}</span>
           </button>
           {showColorPicker === 'text' && (
-            <div className="absolute z-10 mt-2">
+            <div className="absolute z-10 mt-2 bg-white p-3 rounded-lg shadow-lg border border-gray-200">
               <HexColorPicker
                 color={element.color}
-                onChange={(color) => updateElement(element.id, { color })}
+                onChange={(color) => {
+                  updateElement(element.id, { color })
+                  addToRecentColors(color)
+                }}
+              />
+              <RecentColors
+                recentColors={recentColors}
+                onColorSelect={(color) => {
+                  updateElement(element.id, { color })
+                  setShowColorPicker(null)
+                }}
               />
             </div>
           )}

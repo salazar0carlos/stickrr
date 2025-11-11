@@ -21,6 +21,8 @@ export default function ElementRenderer({
   const transformerRef = useRef<any>(null)
   const shapeRef = useRef<any>(null)
   const updateElement = useDesignerStore((state) => state.updateElement)
+  const snapToGrid = useDesignerStore((state) => state.snapToGrid)
+  const gridSize = useDesignerStore((state) => state.gridSize)
 
   useEffect(() => {
     if (isSelected && transformerRef.current && shapeRef.current) {
@@ -31,6 +33,11 @@ export default function ElementRenderer({
 
   // Don't render hidden elements
   if (!element.visible) return null
+
+  const snapToGridValue = (value: number) => {
+    if (!snapToGrid) return value
+    return Math.round(value / gridSize) * gridSize
+  }
 
   const handleTransformEnd = () => {
     const node = shapeRef.current
@@ -63,10 +70,15 @@ export default function ElementRenderer({
     onTap: onSelect,
     onDragEnd: (e: any) => {
       onDragEnd(e)
+      const newX = snapToGridValue(e.target.x())
+      const newY = snapToGridValue(e.target.y())
       updateElement(element.id, {
-        x: e.target.x(),
-        y: e.target.y(),
+        x: newX,
+        y: newY,
       })
+      // Snap the visual position too
+      e.target.x(newX)
+      e.target.y(newY)
     },
     onTransformEnd: handleTransformEnd,
   }
