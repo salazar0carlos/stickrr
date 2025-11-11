@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
 import type { TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { HexColorPicker } from 'react-colorful'
-import { FONT_FAMILIES } from '@/lib/designerConstants'
+import { FONT_FAMILIES, FONT_SIZE_PRESETS } from '@/lib/designerConstants'
 import RecentColors from './RecentColors'
 import { ChevronDown } from 'lucide-react'
 
@@ -64,30 +64,44 @@ export default function PropertiesPanel() {
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">Font Size</label>
-          <input
-            type="number"
-            value={element.fontSize}
-            onChange={(e) => updateElement(element.id, { fontSize: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
-          />
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Font Size</label>
+        <div className="grid grid-cols-5 gap-1.5 mb-2">
+          {FONT_SIZE_PRESETS.slice(0, 10).map((size) => (
+            <button
+              key={size}
+              onClick={() => updateElement(element.id, { fontSize: size })}
+              className={`px-2 py-1 rounded text-xs font-medium transition ${
+                element.fontSize === size
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {size}
+            </button>
+          ))}
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">Font Weight</label>
-          <select
-            value={element.fontWeight}
-            onChange={(e) => updateElement(element.id, { fontWeight: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value={300}>Light</option>
-            <option value={400}>Regular</option>
-            <option value={500}>Medium</option>
-            <option value={600}>Semibold</option>
-            <option value={700}>Bold</option>
-          </select>
-        </div>
+        <input
+          type="number"
+          value={element.fontSize}
+          onChange={(e) => updateElement(element.id, { fontSize: Number(e.target.value) })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Font Weight</label>
+        <select
+          value={element.fontWeight}
+          onChange={(e) => updateElement(element.id, { fontWeight: Number(e.target.value) })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value={300}>Light</option>
+          <option value={400}>Regular</option>
+          <option value={500}>Medium</option>
+          <option value={600}>Semibold</option>
+          <option value={700}>Bold</option>
+        </select>
       </div>
 
       <div>

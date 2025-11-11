@@ -50,3 +50,5 @@ export const ZOOM_PRESETS = [
   { value: 2, label: '200%' },
   { value: 3, label: '300%' },
 ] as const
+
+export const FONT_SIZE_PRESETS = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 72, 96] as const
