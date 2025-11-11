@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
-import { Sparkles, Zap, Printer, Star } from 'lucide-react'
+import Footer from '@/components/Footer'
+import { Sparkles, Zap, Printer } from 'lucide-react'
 
 export default function Home() {
   return (
@@ -153,26 +154,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="bg-gray-900 text-gray-400 py-12 px-4">
-          <div className="max-w-6xl mx-auto text-center">
-            <div className="text-2xl font-bold text-white mb-4">Stickrr</div>
-            <p className="mb-6">Create beautiful labels for everything</p>
-            <div className="flex justify-center gap-8 text-sm">
-              <Link href="/pricing" className="hover:text-white transition">
-                Pricing
-              </Link>
-              <Link href="/login" className="hover:text-white transition">
-                Login
-              </Link>
-              <Link href="/signup" className="hover:text-white transition">
-                Sign Up
-              </Link>
-            </div>
-            <p className="text-xs mt-8">© 2024 Stickrr. All rights reserved.</p>
-          </div>
-        </footer>
       </main>
+      <Footer />
     </>
   )
 }

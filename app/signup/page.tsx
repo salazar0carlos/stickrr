@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [ageConfirmed, setAgeConfirmed] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -18,6 +19,11 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (!ageConfirmed) {
+      setError('You must be at least 13 years old to use this service')
+      return
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match')
@@ -149,6 +155,29 @@ export default function SignupPage() {
                 )}
               </button>
             </div>
+          </div>
+
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                id="ageConfirmation"
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={(e) => setAgeConfirmed(e.target.checked)}
+                className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-purple-300"
+                required
+              />
+            </div>
+            <label htmlFor="ageConfirmation" className="ml-2 text-sm text-gray-700">
+              I confirm that I am at least <strong>13 years old</strong> and agree to the{' '}
+              <Link href="/terms" target="_blank" className="text-purple-600 hover:underline">
+                Terms of Service
+              </Link>
+              {' '}and{' '}
+              <Link href="/privacy" target="_blank" className="text-purple-600 hover:underline">
+                Privacy Policy
+              </Link>
+            </label>
           </div>
 
           <button
