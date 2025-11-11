@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, memo } from 'react'
 import { Text, Rect, Circle, Line, Image as KonvaImage, Transformer } from 'react-konva'
 import type { DesignerElement, TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { useDesignerStore } from '@/store/designerStore'
@@ -16,7 +16,7 @@ interface ElementRendererProps {
 }
 
 // Separate component for image rendering to use the useImage hook
-function ImageRenderer({ element, commonProps }: { element: ImageElement; commonProps: any }) {
+const ImageRenderer = memo(function ImageRenderer({ element, commonProps }: { element: ImageElement; commonProps: any }) {
   const [image] = useImage(element.src)
 
   if (!image) {
@@ -42,9 +42,9 @@ function ImageRenderer({ element, commonProps }: { element: ImageElement; common
       height={element.height}
     />
   )
-}
+})
 
-export default function ElementRenderer({
+const ElementRenderer = memo(function ElementRenderer({
   element,
   isSelected,
   onSelect,
@@ -225,4 +225,6 @@ export default function ElementRenderer({
       )}
     </>
   )
-}
+})
+
+export default ElementRenderer

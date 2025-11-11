@@ -1,13 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { memo } from 'react'
 
 interface RecentColorsProps {
   recentColors: string[]
   onColorSelect: (color: string) => void
 }
 
-export default function RecentColors({ recentColors, onColorSelect }: RecentColorsProps) {
+const RecentColors = memo(function RecentColors({ recentColors, onColorSelect }: RecentColorsProps) {
   if (recentColors.length === 0) return null
 
   return (
@@ -26,4 +26,6 @@ export default function RecentColors({ recentColors, onColorSelect }: RecentColo
       </div>
     </div>
   )
-}
+})
+
+export default RecentColors

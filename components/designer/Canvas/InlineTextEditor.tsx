@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, memo } from 'react'
 import type { TextElement } from '@/types/designer'
 
 interface InlineTextEditorProps {
@@ -11,7 +11,7 @@ interface InlineTextEditorProps {
   onCancel: () => void
 }
 
-export default function InlineTextEditor({
+const InlineTextEditor = memo(function InlineTextEditor({
   element,
   zoom,
   pan,
@@ -95,4 +95,6 @@ export default function InlineTextEditor({
       </div>
     </div>
   )
-}
+})
+
+export default InlineTextEditor

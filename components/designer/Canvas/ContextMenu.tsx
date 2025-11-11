@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, memo } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
 import {
   Copy,
@@ -21,7 +21,7 @@ interface ContextMenuProps {
   onClose: () => void
 }
 
-export default function ContextMenu({ x, y, elementId, onClose }: ContextMenuProps) {
+const ContextMenu = memo(function ContextMenu({ x, y, elementId, onClose }: ContextMenuProps) {
   const elements = useDesignerStore((state) => state.elements)
   const duplicateElements = useDesignerStore((state) => state.duplicateElements)
   const deleteElements = useDesignerStore((state) => state.deleteElements)
@@ -131,4 +131,6 @@ export default function ContextMenu({ x, y, elementId, onClose }: ContextMenuPro
       })}
     </div>
   )
-}
+})
+
+export default ContextMenu
