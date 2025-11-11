@@ -148,7 +148,7 @@ export default function LibraryPage() {
               </p>
             </div>
             <button
-              onClick={() => router.push('/designer')}
+              onClick={() => router.push('/studio')}
               className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-sm"
             >
               <Plus className="w-5 h-5" />
@@ -200,7 +200,7 @@ export default function LibraryPage() {
                 Create your first label to get started
               </p>
               <button
-                onClick={() => router.push('/designer')}
+                onClick={() => router.push('/studio')}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-sm"
               >
                 Create Label
@@ -265,7 +265,7 @@ export default function LibraryPage() {
 
                     <div className="flex gap-3">
                       <button
-                        onClick={() => router.push(`/designer?label=${label.id}`)}
+                        onClick={() => router.push(`/studio?label=${label.id}`)}
                         className="flex-1 bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition shadow-sm"
                       >
                         Edit
