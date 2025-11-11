@@ -4,16 +4,22 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { auth } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 import { Menu, X, LogOut } from 'lucide-react'
 
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    auth.getUser().then(setUser)
+    auth.getUser()
+      .then(setUser)
+      .catch((error) => {
+        console.error('Error fetching user:', error)
+        setUser(null)
+      })
   }, [])
 
   const handleSignOut = async () => {

@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { auth, labels } from '@/lib/supabase'
 import type { Label } from '@/types'
+import type { User } from '@supabase/supabase-js'
 import { FileText, Trash2, Plus, Search, ArrowUpDown } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function LibraryPage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [userLabels, setUserLabels] = useState<Label[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'date-new' | 'date-old' | 'size'>('date-new')
 
@@ -35,17 +38,42 @@ export default function LibraryPage() {
     setLoading(false)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this label?')) {
-      return
-    }
+  const handleDelete = async (id: string, name: string) => {
+    // Use toast.promise for a better UX with confirmation
+    toast((t) => (
+      <div className="flex flex-col gap-3">
+        <p className="font-medium">Delete "{name}"?</p>
+        <p className="text-sm text-gray-600">This action cannot be undone.</p>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id)
+              setDeleting(id)
+              const { error } = await labels.delete(id)
+              setDeleting(null)
 
-    const { error } = await labels.delete(id)
-    if (error) {
-      alert('Failed to delete label. Please try again.')
-    } else {
-      setUserLabels(userLabels.filter((label) => label.id !== id))
-    }
+              if (error) {
+                toast.error('Failed to delete label. Please try again.')
+              } else {
+                setUserLabels(userLabels.filter((label) => label.id !== id))
+                toast.success('Label deleted successfully')
+              }
+            }}
+            className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-medium"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+    })
   }
 
   const formatDate = (dateString: string) => {
@@ -243,8 +271,9 @@ export default function LibraryPage() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(label.id)}
+                        onClick={() => handleDelete(label.id, label.template_id || 'this label')}
                         className="bg-red-50 text-red-600 p-2.5 rounded-lg hover:bg-red-100 transition"
+                        disabled={deleting === label.id}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
