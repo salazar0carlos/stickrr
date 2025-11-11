@@ -1,15 +1,13 @@
 // Common label sizes in pixels (at 300 DPI)
 // Format: width x height in inches -> pixels
+// Named for common use cases
 export const LABEL_SIZES = {
-  '2x1': { width: 600, height: 300, label: '2" × 1"' },
-  '2.25x1.25': { width: 675, height: 375, label: '2.25" × 1.25"' },
-  '3x2': { width: 900, height: 600, label: '3" × 2"' },
-  '4x2': { width: 1200, height: 600, label: '4" × 2"' },
-  '4x3': { width: 1200, height: 900, label: '4" × 3"' },
-  '4x6': { width: 1200, height: 1800, label: '4" × 6"' },
-  '5x3': { width: 1500, height: 900, label: '5" × 3"' },
-  '6x4': { width: 1800, height: 1200, label: '6" × 4"' },
-  'custom': { width: 800, height: 600, label: 'Custom' },
+  '2x1': { width: 600, height: 300, label: 'Small Label (2" × 1") - Spice jars' },
+  '2.25x1.25': { width: 675, height: 375, label: 'Standard Label (2.25" × 1.25") - Mason jars' },
+  '3x2': { width: 900, height: 600, label: 'Medium Label (3" × 2") - Storage containers' },
+  '4x2': { width: 1200, height: 600, label: 'Wide Label (4" × 2") - Freezer bags' },
+  '4x3': { width: 1200, height: 900, label: 'Large Label (4" × 3") - Big jars' },
+  '4x6': { width: 1200, height: 1800, label: 'Tall Label (4" × 6") - Bottles' },
 } as const
 
 export type LabelSizeKey = keyof typeof LABEL_SIZES

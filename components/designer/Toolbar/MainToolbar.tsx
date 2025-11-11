@@ -77,21 +77,48 @@ export default function MainToolbar() {
     return sizeEntry ? sizeEntry[1].label : 'Custom'
   }
 
-  const handleExport = (options: ExportOptions) => {
+  const handleExport = async (options: ExportOptions) => {
     // Get the canvas element from the Konva stage
     const stage = document.querySelector('canvas')
     if (!stage) return
 
-    // Create a temporary link to download
-    const dataURL = (stage as HTMLCanvasElement).toDataURL(
-      `image/${options.format}`,
-      options.quality / 100
-    )
+    if (options.format === 'pdf') {
+      // Dynamic import jsPDF
+      const { default: jsPDF } = await import('jspdf')
 
-    const link = document.createElement('a')
-    link.download = `design-${Date.now()}.${options.format}`
-    link.href = dataURL
-    link.click()
+      // Get canvas dimensions in inches (assuming 300 DPI)
+      const widthInches = canvasWidth / 300
+      const heightInches = canvasHeight / 300
+
+      // Convert to PDF points (1 inch = 72 points)
+      const widthPt = widthInches * 72
+      const heightPt = heightInches * 72
+
+      // Create PDF with exact label dimensions
+      const pdf = new jsPDF({
+        orientation: widthInches > heightInches ? 'landscape' : 'portrait',
+        unit: 'pt',
+        format: [widthPt, heightPt],
+      })
+
+      // Add canvas image to PDF
+      const dataURL = (stage as HTMLCanvasElement).toDataURL('image/png', 1.0)
+      pdf.addImage(dataURL, 'PNG', 0, 0, widthPt, heightPt)
+
+      // Download PDF
+      pdf.save(`label-${Date.now()}.pdf`)
+    } else {
+      // Handle PNG/JPEG export
+      const dataURL = (stage as HTMLCanvasElement).toDataURL(
+        `image/${options.format}`,
+        options.quality / 100
+      )
+
+      const link = document.createElement('a')
+      link.download = `label-${Date.now()}.${options.format}`
+      link.href = dataURL
+      link.click()
+    }
   }
 
   return (

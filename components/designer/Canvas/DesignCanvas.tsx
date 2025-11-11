@@ -133,8 +133,27 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
     return lines
   }
 
+  // Prevent page scrolling when interacting with canvas
+  useEffect(() => {
+    const preventDefault = (e: Event) => {
+      if ((e.target as HTMLElement).closest('.konvajs-content')) {
+        e.preventDefault()
+      }
+    }
+
+    document.addEventListener('touchmove', preventDefault, { passive: false })
+
+    return () => {
+      document.removeEventListener('touchmove', preventDefault)
+    }
+  }, [])
+
   return (
-    <div className="relative overflow-hidden rounded-lg border-2 border-gray-300 shadow-lg bg-gray-100">
+    <div
+      className="relative overflow-hidden rounded-lg border-2 border-gray-300 shadow-lg bg-gray-100"
+      onTouchMove={(e) => e.preventDefault()}
+      style={{ touchAction: 'none' }}
+    >
       <Stage
         ref={stageRef}
         width={width}
@@ -147,10 +166,13 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
         onWheel={handleWheel}
         draggable
         onDragEnd={(e) => {
-          useDesignerStore.getState().setPan({
-            x: e.target.x(),
-            y: e.target.y(),
-          })
+          // Only update pan if the stage itself was dragged, not an element
+          if (e.target === e.target.getStage()) {
+            useDesignerStore.getState().setPan({
+              x: e.target.x(),
+              y: e.target.y(),
+            })
+          }
         }}
       >
         <Layer>

@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
 import { HexColorPicker } from 'react-colorful'
 import RecentColors from './RecentColors'
+import { LABEL_SIZES, type LabelSizeKey } from '@/lib/designerConstants'
 
 export default function CanvasSettings() {
   const backgroundColor = useDesignerStore((state) => state.backgroundColor)
@@ -22,6 +23,18 @@ export default function CanvasSettings() {
     })
   }
 
+  const getCurrentSizeKey = (): LabelSizeKey => {
+    const sizeEntry = Object.entries(LABEL_SIZES).find(
+      ([_, size]) => size.width === canvasWidth && size.height === canvasHeight
+    )
+    return (sizeEntry?.[0] as LabelSizeKey) || 'custom'
+  }
+
+  const handleLabelSizeChange = (sizeKey: LabelSizeKey) => {
+    const size = LABEL_SIZES[sizeKey]
+    setCanvasSize(size.width, size.height)
+  }
+
   const backgroundPresets = [
     { name: 'White', color: '#ffffff' },
     { name: 'Light Gray', color: '#f3f4f6' },
@@ -35,31 +48,36 @@ export default function CanvasSettings() {
 
   return (
     <div className="p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">Canvas Settings</h3>
+      <h3 className="text-sm font-semibold text-gray-700 mb-3">Label Settings</h3>
 
-      {/* Canvas Size */}
+      {/* Label Size Selector */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-2">Canvas Size</label>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Width</label>
-            <input
-              type="number"
-              value={canvasWidth}
-              onChange={(e) => setCanvasSize(Number(e.target.value), canvasHeight)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Height</label>
-            <input
-              type="number"
-              value={canvasHeight}
-              onChange={(e) => setCanvasSize(canvasWidth, Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Label Size
+        </label>
+        <div className="space-y-2">
+          {Object.entries(LABEL_SIZES).map(([key, size]) => (
+            <button
+              key={key}
+              onClick={() => handleLabelSizeChange(key as LabelSizeKey)}
+              className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition text-left ${
+                getCurrentSizeKey() === key
+                  ? 'bg-indigo-600 text-white ring-2 ring-indigo-600'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span>{size.label}</span>
+                {getCurrentSizeKey() === key && (
+                  <span className="text-xs">✓ Active</span>
+                )}
+              </div>
+            </button>
+          ))}
         </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Choose a standard label size for printing
+        </p>
       </div>
 
       {/* Background Color */}
