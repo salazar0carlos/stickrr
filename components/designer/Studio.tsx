@@ -10,6 +10,7 @@ import LayersPanel from './Sidebar/LayersPanel'
 import CanvasSettings from './Sidebar/CanvasSettings'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Layers, Box, Settings, Palette, Menu, X, Home, Library } from 'lucide-react'
+import { useDesignerStore } from '@/store/designerStore'
 
 export default function Studio() {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
@@ -18,6 +19,10 @@ export default function Studio() {
   const [rightTab, setRightTab] = useState<'properties' | 'layers' | 'canvas'>('properties')
   const [isMobile, setIsMobile] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Get canvas dimensions from store
+  const canvasWidth = useDesignerStore((state) => state.canvasWidth)
+  const canvasHeight = useDesignerStore((state) => state.canvasHeight)
 
   // Detect mobile viewport
   useEffect(() => {
@@ -37,9 +42,6 @@ export default function Studio() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  const canvasWidth = isMobile ? 350 : 800
-  const canvasHeight = isMobile ? 500 : 600
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
