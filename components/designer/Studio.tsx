@@ -10,7 +10,7 @@ import CanvasSettings from './Sidebar/CanvasSettings'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Layers, Box, Settings, Palette, Menu, X } from 'lucide-react'
 
-export default function AdvancedDesigner() {
+export default function Studio() {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true)
   const [leftTab, setLeftTab] = useState<'elements' | 'templates'>('elements')
