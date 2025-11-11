@@ -1,13 +1,14 @@
 'use client'
 
-import React from 'react'
+import React, { useRef } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
-import type { TextElement, ShapeElement } from '@/types/designer'
+import type { TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { Type, Square, Circle, Image as ImageIcon, Minus, Triangle, Star } from 'lucide-react'
 
 export default function ElementsPanel() {
   const addElement = useDesignerStore((state) => state.addElement)
   const elements = useDesignerStore((state) => state.elements)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const addTextElement = () => {
     const newElement: TextElement = {
@@ -154,6 +155,63 @@ export default function ElementsPanel() {
     addElement(newElement)
   }
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file')
+      return
+    }
+
+    // Create a FileReader to convert image to base64
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        // Calculate aspect ratio to maintain proportions
+        const maxWidth = 300
+        const maxHeight = 300
+        let width = img.width
+        let height = img.height
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height)
+          width = width * ratio
+          height = height * ratio
+        }
+
+        const newElement: ImageElement = {
+          id: `image-${Date.now()}`,
+          type: 'image',
+          x: 50,
+          y: 50,
+          width,
+          height,
+          rotation: 0,
+          zIndex: elements.length,
+          locked: false,
+          visible: true,
+          opacity: 1,
+          src: event.target?.result as string,
+          originalWidth: img.width,
+          originalHeight: img.height,
+        }
+        addElement(newElement)
+      }
+      img.src = event.target?.result as string
+    }
+    reader.readAsDataURL(file)
+
+    // Reset input so the same file can be uploaded again if needed
+    e.target.value = ''
+  }
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click()
+  }
+
   const elements_list = [
     {
       name: 'Text',
@@ -213,7 +271,15 @@ export default function ElementsPanel() {
       </div>
 
       <div className="mt-4 pt-4 border-t border-gray-200">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
         <button
+          onClick={triggerImageUpload}
           className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition text-gray-600 hover:text-indigo-600"
           title="Upload Image"
         >

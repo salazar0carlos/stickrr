@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
-import type { TextElement, ShapeElement } from '@/types/designer'
+import type { TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { HexColorPicker } from 'react-colorful'
 import { FONT_FAMILIES } from '@/lib/designerConstants'
 import RecentColors from './RecentColors'
@@ -221,6 +221,32 @@ export default function PropertiesPanel() {
     </div>
   )
 
+  const renderImageProperties = (element: ImageElement) => (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Image Info</label>
+        <div className="bg-gray-50 px-3 py-2 rounded-lg text-xs text-gray-600 space-y-1">
+          <div>Original: {element.originalWidth} × {element.originalHeight}px</div>
+          <div>Current: {Math.round(element.width)} × {Math.round(element.height)}px</div>
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Aspect Ratio</label>
+        <button
+          onClick={() => {
+            const ratio = element.originalWidth / element.originalHeight
+            updateElement(element.id, {
+              height: element.width / ratio
+            })
+          }}
+          className="w-full px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium"
+        >
+          Reset to Original Ratio
+        </button>
+      </div>
+    </div>
+  )
+
   const renderCommonProperties = () => (
     <div className="space-y-4 pt-4 border-t border-gray-200">
       <div className="grid grid-cols-2 gap-3">
@@ -306,6 +332,7 @@ export default function PropertiesPanel() {
 
       {selectedElement.type === 'text' && renderTextProperties(selectedElement as TextElement)}
       {selectedElement.type === 'shape' && renderShapeProperties(selectedElement as ShapeElement)}
+      {selectedElement.type === 'image' && renderImageProperties(selectedElement as ImageElement)}
 
       {renderCommonProperties()}
     </div>

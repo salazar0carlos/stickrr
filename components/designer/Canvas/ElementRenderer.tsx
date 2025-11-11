@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { Text, Rect, Circle, Line, Image as KonvaImage, Transformer } from 'react-konva'
 import type { DesignerElement, TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { useDesignerStore } from '@/store/designerStore'
+import useImage from 'use-image'
 
 interface ElementRendererProps {
   element: DesignerElement
@@ -11,6 +12,36 @@ interface ElementRendererProps {
   onSelect: (e: any) => void
   onDragEnd: (e: any) => void
   onContextMenu?: (e: any, elementId: string) => void
+  onDoubleClick?: (elementId: string) => void
+}
+
+// Separate component for image rendering to use the useImage hook
+function ImageRenderer({ element, commonProps }: { element: ImageElement; commonProps: any }) {
+  const [image] = useImage(element.src)
+
+  if (!image) {
+    // Show placeholder while image is loading
+    return (
+      <Rect
+        {...commonProps}
+        width={element.width}
+        height={element.height}
+        fill="#f0f0f0"
+        stroke="#ccc"
+        strokeWidth={1}
+        dash={[5, 5]}
+      />
+    )
+  }
+
+  return (
+    <KonvaImage
+      {...commonProps}
+      image={image}
+      width={element.width}
+      height={element.height}
+    />
+  )
 }
 
 export default function ElementRenderer({
@@ -19,6 +50,7 @@ export default function ElementRenderer({
   onSelect,
   onDragEnd,
   onContextMenu,
+  onDoubleClick,
 }: ElementRendererProps) {
   const transformerRef = useRef<any>(null)
   const shapeRef = useRef<any>(null)
@@ -109,6 +141,11 @@ export default function ElementRenderer({
             height={textEl.height}
             lineHeight={textEl.lineHeight}
             letterSpacing={textEl.letterSpacing}
+            onDblClick={() => {
+              if (onDoubleClick) {
+                onDoubleClick(element.id)
+              }
+            }}
           />
         )
       }
@@ -163,18 +200,7 @@ export default function ElementRenderer({
 
       case 'image': {
         const imageEl = element as ImageElement
-        // Image rendering would require loading the image first
-        // For now, we'll just render a placeholder rectangle
-        return (
-          <Rect
-            {...commonProps}
-            width={imageEl.width}
-            height={imageEl.height}
-            fill="#e0e0e0"
-            stroke="#999"
-            strokeWidth={1}
-          />
-        )
+        return <ImageRenderer element={imageEl} commonProps={commonProps} />
       }
 
       default:
