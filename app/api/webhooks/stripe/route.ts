@@ -1,25 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { validateEnv } from '@/lib/env'
 
-const env = validateEnv({
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-}, 'Stripe Webhook')
+// Lazy initialization to avoid build-time errors
+let stripe: Stripe | null = null
+let supabase: SupabaseClient | null = null
+let env: Record<string, string> | null = null
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
-})
+function getClients() {
+  if (!stripe || !supabase || !env) {
+    env = validateEnv({
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+      STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    }, 'Stripe Webhook')
 
-const supabase = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY
-)
+    stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    })
+
+    supabase = createClient(
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.SUPABASE_SERVICE_ROLE_KEY
+    )
+  }
+  return { stripe, supabase, env }
+}
 
 export async function POST(request: NextRequest) {
+  const { stripe, supabase: supabaseClient, env } = getClients()
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 
@@ -47,18 +58,18 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session
-        await handleCheckoutCompleted(session)
+        await handleCheckoutCompleted(session, supabaseClient)
         break
 
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
         const subscription = event.data.object as Stripe.Subscription
-        await handleSubscriptionUpdate(subscription)
+        await handleSubscriptionUpdate(subscription, supabaseClient)
         break
 
       case 'customer.subscription.deleted':
         const deletedSubscription = event.data.object as Stripe.Subscription
-        await handleSubscriptionDeleted(deletedSubscription)
+        await handleSubscriptionDeleted(deletedSubscription, supabaseClient)
         break
 
       default:
@@ -77,7 +88,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, supabase: SupabaseClient) {
   const userId = session.metadata?.userId
   if (!userId) {
     console.error('No userId in session metadata')
@@ -115,7 +126,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 }
 
-async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
+async function handleSubscriptionUpdate(subscription: Stripe.Subscription, supabase: SupabaseClient) {
   const { error } = await supabase
     .from('subscriptions')
     .update({
@@ -130,7 +141,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   }
 }
 
-async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription, supabase: SupabaseClient) {
   const { error } = await supabase
     .from('subscriptions')
     .update({

@@ -1,6 +1,9 @@
 /**
  * Environment variable validation utility
  * Ensures all required environment variables are present
+ *
+ * Note: This should only be called at runtime (inside route handlers),
+ * not at module initialization, to avoid build-time errors.
  */
 
 export function validateEnv(variables: Record<string, string | undefined>, context: string): Record<string, string> {
@@ -16,10 +19,12 @@ export function validateEnv(variables: Record<string, string | undefined>, conte
   }
 
   if (missing.length > 0) {
-    throw new Error(
+    const error = new Error(
       `Missing required environment variables for ${context}: ${missing.join(', ')}\n` +
       'Please check your .env.local file and compare with .env.example'
     )
+    console.error(error.message)
+    throw error
   }
 
   return validated

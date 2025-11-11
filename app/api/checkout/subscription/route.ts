@@ -2,18 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { validateEnv } from '@/lib/env'
 
-const env = validateEnv({
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-  STRIPE_PRICE_ID_SUBSCRIPTION: process.env.STRIPE_PRICE_ID_SUBSCRIPTION,
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-}, 'Stripe Subscription Checkout')
+// Lazy initialization to avoid build-time errors
+let stripe: Stripe | null = null
+let env: Record<string, string> | null = null
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
-})
+function getStripeClient() {
+  if (!stripe || !env) {
+    env = validateEnv({
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+      STRIPE_PRICE_ID_SUBSCRIPTION: process.env.STRIPE_PRICE_ID_SUBSCRIPTION,
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    }, 'Stripe Subscription Checkout')
+
+    stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    })
+  }
+  return { stripe, env }
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const { stripe, env } = getStripeClient()
     const { userId, email } = await request.json()
 
     if (!userId || !email) {
