@@ -4,6 +4,7 @@ import React, { useRef } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
 import type { TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { Type, Square, Circle, Image as ImageIcon, Minus, Triangle, Star, Hexagon, Pentagon, ArrowRight } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function ElementsPanel() {
   const addElement = useDesignerStore((state) => state.addElement)
@@ -248,9 +249,19 @@ export default function ElementsPanel() {
 
     // Check if file is an image
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file')
+      toast.error('Please upload an image file (PNG, JPG, GIF, etc.)')
       return
     }
+
+    // Check file size (max 5MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('Image must be smaller than 5MB. Please choose a smaller image.')
+      return
+    }
+
+    // Show loading toast
+    const loadingToast = toast.loading('Uploading image...')
 
     // Create a FileReader to convert image to base64
     const reader = new FileReader()
@@ -286,8 +297,15 @@ export default function ElementsPanel() {
           originalHeight: img.height,
         }
         addElement(newElement)
+        toast.success('Image added to canvas!', { id: loadingToast })
+      }
+      img.onerror = () => {
+        toast.error('Failed to load image. Please try another file.', { id: loadingToast })
       }
       img.src = event.target?.result as string
+    }
+    reader.onerror = () => {
+      toast.error('Failed to read image file. Please try again.', { id: loadingToast })
     }
     reader.readAsDataURL(file)
 

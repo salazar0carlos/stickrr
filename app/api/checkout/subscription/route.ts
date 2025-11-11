@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { validateEnv } from '@/lib/env'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const env = validateEnv({
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_PRICE_ID_SUBSCRIPTION: process.env.STRIPE_PRICE_ID_SUBSCRIPTION,
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+}, 'Stripe Subscription Checkout')
+
+const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-06-20',
 })
 
@@ -22,13 +29,13 @@ export async function POST(request: NextRequest) {
       customer_email: email,
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID_SUBSCRIPTION,
+          price: env.STRIPE_PRICE_ID_SUBSCRIPTION,
           quantity: 1,
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/designer?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+      success_url: `${env.NEXT_PUBLIC_APP_URL}/studio?success=true`,
+      cancel_url: `${env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
       metadata: {
         userId,
       },
