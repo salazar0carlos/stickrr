@@ -24,7 +24,11 @@ export default function Studio() {
   const canvasWidth = useDesignerStore((state) => state.canvasWidth)
   const canvasHeight = useDesignerStore((state) => state.canvasHeight)
 
-  // Detect mobile viewport
+  // Calculate scaled viewport dimensions to fit screen
+  const [viewportWidth, setViewportWidth] = useState(800)
+  const [viewportHeight, setViewportHeight] = useState(600)
+
+  // Detect mobile viewport and calculate scaled canvas size
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768
@@ -42,6 +46,31 @@ export default function Studio() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Calculate scaled display dimensions based on available viewport space
+  useEffect(() => {
+    const calculateViewportSize = () => {
+      // Get available space (accounting for sidebars and padding)
+      const sidebarWidth = isMobile ? 0 : (leftSidebarOpen ? 280 : 0) + (rightSidebarOpen ? 320 : 0)
+      const availableWidth = window.innerWidth - sidebarWidth - 100 // 100px padding
+      const availableHeight = window.innerHeight - 200 // 200px for toolbars/nav
+
+      // Calculate scale to fit while maintaining aspect ratio
+      const scaleX = availableWidth / canvasWidth
+      const scaleY = availableHeight / canvasHeight
+      const scale = Math.min(scaleX, scaleY, 1) // Don't scale up, max 1:1
+
+      // Set viewport dimensions
+      setViewportWidth(Math.floor(canvasWidth * scale))
+      setViewportHeight(Math.floor(canvasHeight * scale))
+    }
+
+    calculateViewportSize()
+
+    // Recalculate on window resize
+    window.addEventListener('resize', calculateViewportSize)
+    return () => window.removeEventListener('resize', calculateViewportSize)
+  }, [canvasWidth, canvasHeight, leftSidebarOpen, rightSidebarOpen, isMobile])
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -137,7 +166,7 @@ export default function Studio() {
 
         {/* Canvas Area */}
         <div className={`flex-1 flex items-center justify-center overflow-auto ${isMobile ? 'p-2' : 'p-8'}`}>
-          <DesignCanvas width={canvasWidth} height={canvasHeight} />
+          <DesignCanvas width={viewportWidth} height={viewportHeight} />
         </div>
 
         {/* Desktop: Right Sidebar */}
