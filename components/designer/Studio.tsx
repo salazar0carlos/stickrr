@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import DesignCanvas from './Canvas/DesignCanvas'
 import MainToolbar from './Toolbar/MainToolbar'
 import ElementsPanel from './Sidebar/ElementsPanel'
@@ -8,7 +9,7 @@ import PropertiesPanel from './Sidebar/PropertiesPanel'
 import LayersPanel from './Sidebar/LayersPanel'
 import CanvasSettings from './Sidebar/CanvasSettings'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Layers, Box, Settings, Palette, Menu, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Layers, Box, Settings, Palette, Menu, X, Home, Library } from 'lucide-react'
 
 export default function Studio() {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
@@ -42,6 +43,21 @@ export default function Studio() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
+      {/* Navigation Bar */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2 text-gray-700 hover:text-indigo-600 transition font-medium text-sm">
+            <Home className="w-4 h-4" />
+            <span className="hidden sm:inline">Home</span>
+          </Link>
+          <Link href="/library" className="flex items-center gap-2 text-gray-700 hover:text-indigo-600 transition font-medium text-sm">
+            <Library className="w-4 h-4" />
+            <span className="hidden sm:inline">My Labels</span>
+          </Link>
+        </div>
+        <div className="text-sm font-semibold text-gray-800">✨ Studio</div>
+      </div>
+
       {/* Toolbar */}
       <MainToolbar />
 

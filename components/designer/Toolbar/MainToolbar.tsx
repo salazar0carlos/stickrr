@@ -95,9 +95,10 @@ export default function MainToolbar() {
   }
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-      {/* Left side - Main actions */}
-      <div className="flex items-center gap-2">
+    <div className="bg-white border-b border-gray-200 px-4 py-2 shadow-sm overflow-x-auto">
+      <div className="flex items-center justify-between gap-4 min-w-max">
+        {/* Left side - Main actions */}
+        <div className="flex items-center gap-2">
         <button
           onClick={undo}
           disabled={!canUndo}
@@ -209,16 +210,16 @@ export default function MainToolbar() {
       </div>
 
       {/* Center - Canvas Size & Zoom controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {/* Canvas Size Selector */}
         <div className="relative">
           <button
             onClick={() => setShowCanvasSizeMenu(!showCanvasSizeMenu)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition text-sm font-medium text-gray-700 border border-gray-300"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition text-xs font-medium text-gray-700 border border-gray-300"
             title="Canvas Size"
           >
-            <Maximize2 className="w-4 h-4" />
-            {getCurrentSizeLabel()}
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">{getCurrentSizeLabel()}</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {showCanvasSizeMenu && (
@@ -236,21 +237,21 @@ export default function MainToolbar() {
           )}
         </div>
 
-        <div className="w-px h-6 bg-gray-300 mx-2" />
+        <div className="w-px h-5 bg-gray-300 mx-1" />
 
         {/* Zoom Controls */}
         <button
           onClick={() => setZoom(zoom - 0.1)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition"
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition"
           title="Zoom Out"
         >
-          <ZoomOut className="w-5 h-5 text-gray-700" />
+          <ZoomOut className="w-4 h-4 text-gray-700" />
         </button>
 
         <div className="relative">
           <button
             onClick={() => setShowZoomMenu(!showZoomMenu)}
-            className="min-w-[70px] px-3 py-1.5 rounded-lg hover:bg-gray-100 transition text-sm font-medium text-gray-700 border border-gray-300"
+            className="min-w-[60px] px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition text-xs font-medium text-gray-700 border border-gray-300"
             title="Zoom Level"
           >
             {Math.round(zoom * 100)}%
@@ -272,27 +273,27 @@ export default function MainToolbar() {
 
         <button
           onClick={() => setZoom(zoom + 0.1)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition"
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition"
           title="Zoom In"
         >
-          <ZoomIn className="w-5 h-5 text-gray-700" />
+          <ZoomIn className="w-4 h-4 text-gray-700" />
         </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-2" />
+        <div className="w-px h-5 bg-gray-300 mx-1" />
 
         <button
           onClick={toggleGrid}
-          className={`p-2 rounded-lg transition ${
+          className={`p-1.5 rounded-lg transition ${
             gridVisible ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-700'
           }`}
           title="Toggle Grid"
         >
-          <Grid3x3 className="w-5 h-5" />
+          <Grid3x3 className="w-4 h-4" />
         </button>
 
         <button
           onClick={() => setSnapToGrid(!snapToGrid)}
-          className={`px-3 py-1.5 rounded-lg transition text-xs font-medium ${
+          className={`px-2.5 py-1.5 rounded-lg transition text-xs font-medium ${
             snapToGrid ? 'bg-indigo-100 text-indigo-600 border border-indigo-300' : 'hover:bg-gray-100 text-gray-700 border border-gray-300'
           }`}
           title="Snap to Grid"
@@ -302,31 +303,32 @@ export default function MainToolbar() {
       </div>
 
       {/* Right side - Save & Export */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={() => setShowExportDialog(true)}
-          className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition font-medium"
+          className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition text-xs font-medium"
           title="Export Design"
         >
-          <Download className="w-4 h-4" />
-          Export
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Export</span>
         </button>
         <button
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm"
+          className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition text-xs font-medium shadow-sm"
           title="Save Design"
         >
-          <Save className="w-4 h-4" />
-          Save
+          <Save className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Save</span>
         </button>
       </div>
 
-      {/* Export Dialog */}
-      {showExportDialog && (
-        <ExportDialog
-          onClose={() => setShowExportDialog(false)}
-          onExport={handleExport}
-        />
-      )}
+        {/* Export Dialog */}
+        {showExportDialog && (
+          <ExportDialog
+            onClose={() => setShowExportDialog(false)}
+            onExport={handleExport}
+          />
+        )}
+      </div>
     </div>
   )
 }
