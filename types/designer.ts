@@ -105,8 +105,17 @@ export interface DesignerActions {
   setZoom: (zoom: number) => void
   setPan: (pan: { x: number; y: number }) => void
   setBackgroundColor: (color: string) => void
+  setCanvasSize: (width: number, height: number) => void
   toggleGrid: () => void
   setSnapToGrid: (snap: boolean) => void
+
+  // Alignment operations
+  alignLeft: (ids: string[]) => void
+  alignCenter: (ids: string[]) => void
+  alignRight: (ids: string[]) => void
+  alignTop: (ids: string[]) => void
+  alignMiddle: (ids: string[]) => void
+  alignBottom: (ids: string[]) => void
 
   // History operations
   undo: () => void

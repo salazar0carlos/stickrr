@@ -13,6 +13,12 @@ import {
   Save,
   ArrowUpToLine,
   ArrowDownToLine,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignVerticalJustifyCenter,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalJustifyEnd,
 } from 'lucide-react'
 
 export default function MainToolbar() {
@@ -29,6 +35,12 @@ export default function MainToolbar() {
   const duplicateElements = useDesignerStore((state) => state.duplicateElements)
   const moveToFront = useDesignerStore((state) => state.moveToFront)
   const moveToBack = useDesignerStore((state) => state.moveToBack)
+  const alignLeft = useDesignerStore((state) => state.alignLeft)
+  const alignCenter = useDesignerStore((state) => state.alignCenter)
+  const alignRight = useDesignerStore((state) => state.alignRight)
+  const alignTop = useDesignerStore((state) => state.alignTop)
+  const alignMiddle = useDesignerStore((state) => state.alignMiddle)
+  const alignBottom = useDesignerStore((state) => state.alignBottom)
 
   const hasSelection = selectedIds.length > 0
   const canUndo = history.past.length > 0
@@ -91,6 +103,60 @@ export default function MainToolbar() {
           title="Send to Back"
         >
           <ArrowDownToLine className="w-5 h-5 text-gray-700" />
+        </button>
+
+        <div className="w-px h-6 bg-gray-300 mx-2" />
+
+        <button
+          onClick={() => alignLeft(selectedIds)}
+          disabled={selectedIds.length < 2}
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          title="Align Left"
+        >
+          <AlignLeft className="w-5 h-5 text-gray-700" />
+        </button>
+        <button
+          onClick={() => alignCenter(selectedIds)}
+          disabled={selectedIds.length < 2}
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          title="Align Center"
+        >
+          <AlignCenter className="w-5 h-5 text-gray-700" />
+        </button>
+        <button
+          onClick={() => alignRight(selectedIds)}
+          disabled={selectedIds.length < 2}
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          title="Align Right"
+        >
+          <AlignRight className="w-5 h-5 text-gray-700" />
+        </button>
+
+        <div className="w-px h-6 bg-gray-300 mx-2" />
+
+        <button
+          onClick={() => alignTop(selectedIds)}
+          disabled={selectedIds.length < 2}
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          title="Align Top"
+        >
+          <AlignHorizontalJustifyStart className="w-5 h-5 text-gray-700 rotate-90" />
+        </button>
+        <button
+          onClick={() => alignMiddle(selectedIds)}
+          disabled={selectedIds.length < 2}
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          title="Align Middle"
+        >
+          <AlignVerticalJustifyCenter className="w-5 h-5 text-gray-700" />
+        </button>
+        <button
+          onClick={() => alignBottom(selectedIds)}
+          disabled={selectedIds.length < 2}
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          title="Align Bottom"
+        >
+          <AlignHorizontalJustifyEnd className="w-5 h-5 text-gray-700 rotate-90" />
         </button>
       </div>
 

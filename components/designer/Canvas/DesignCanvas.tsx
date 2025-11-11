@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from 'react'
 import { Stage, Layer, Rect, Line } from 'react-konva'
 import ElementRenderer from './ElementRenderer'
 import { useDesignerStore } from '@/store/designerStore'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { KonvaEventObject } from 'konva/lib/Node'
 
 interface DesignCanvasProps {
@@ -26,6 +27,9 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
 
   const selectElement = useDesignerStore((state) => state.selectElement)
   const clearSelection = useDesignerStore((state) => state.clearSelection)
+
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts()
 
   // Sort elements by zIndex
   const sortedElements = [...elements].sort((a, b) => a.zIndex - b.zIndex)
@@ -141,7 +145,10 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
               key={element.id}
               element={element}
               isSelected={selectedIds.includes(element.id)}
-              onSelect={() => selectElement(element.id)}
+              onSelect={(e) => {
+                const isMultiSelect = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey
+                selectElement(element.id, isMultiSelect)
+              }}
               onDragEnd={() => {}}
             />
           ))}
