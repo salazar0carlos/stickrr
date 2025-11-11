@@ -8,9 +8,14 @@ import ElementsPanel from './Sidebar/ElementsPanel'
 import PropertiesPanel from './Sidebar/PropertiesPanel'
 import LayersPanel from './Sidebar/LayersPanel'
 import CanvasSettings from './Sidebar/CanvasSettings'
+import TemplatePickerModal from './Templates/TemplatePickerModal'
+import TemplateGuide from './TemplateGuide'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Layers, Box, Settings, Palette, Menu, X, Home, Library } from 'lucide-react'
 import { useDesignerStore } from '@/store/designerStore'
+import { LABEL_SIZES } from '@/lib/designerConstants'
+import type { Template } from '@/lib/templates/enhanced-types'
+import toast from 'react-hot-toast'
 
 export default function Studio() {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
@@ -19,10 +24,18 @@ export default function Studio() {
   const [rightTab, setRightTab] = useState<'properties' | 'layers' | 'canvas'>('properties')
   const [isMobile, setIsMobile] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false)
+  const [showTemplateGuide, setShowTemplateGuide] = useState(false)
 
   // Get canvas dimensions from store
   const canvasWidth = useDesignerStore((state) => state.canvasWidth)
   const canvasHeight = useDesignerStore((state) => state.canvasHeight)
+  const currentLabelId = useDesignerStore((state) => state.currentLabelId)
+  const elements = useDesignerStore((state) => state.elements)
+  const setBackgroundColor = useDesignerStore((state) => state.setBackgroundColor)
+  const setCanvasSize = useDesignerStore((state) => state.setCanvasSize)
+  const addElement = useDesignerStore((state) => state.addElement)
+  const reset = useDesignerStore((state) => state.reset)
 
   // Calculate scaled viewport dimensions to fit screen
   const [viewportWidth, setViewportWidth] = useState(800)
@@ -45,6 +58,13 @@ export default function Studio() {
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Show template picker on initial load if no label loaded and no elements
+  useEffect(() => {
+    if (!currentLabelId && elements.length === 0) {
+      setShowTemplatePicker(true)
+    }
   }, [])
 
   // Calculate scaled display dimensions based on available viewport space
@@ -72,6 +92,44 @@ export default function Studio() {
     return () => window.removeEventListener('resize', calculateViewportSize)
   }, [canvasWidth, canvasHeight, leftSidebarOpen, rightSidebarOpen, isMobile])
 
+  // Handle template selection
+  const handleSelectTemplate = (template: Template) => {
+    // Get canvas size from template
+    const sizeKey = template.metadata.size
+    const size = LABEL_SIZES[sizeKey]
+
+    if (size) {
+      setCanvasSize(size.width, size.height)
+    }
+
+    // Set background color
+    setBackgroundColor(template.backgroundColor)
+
+    // Add all template elements to canvas
+    template.elements.forEach((element) => {
+      addElement({ ...element })
+    })
+
+    // Show template guide if there are locked elements
+    const hasLockedElements = template.elements.some((el) => el.locked)
+    if (hasLockedElements) {
+      setShowTemplateGuide(true)
+    }
+
+    toast.success(`Applied "${template.metadata.name}" template!`)
+  }
+
+  // Handle starting with blank canvas
+  const handleStartBlank = () => {
+    // Just close the modal, canvas is already blank
+    toast.success('Starting with blank canvas')
+  }
+
+  // Handle opening template picker
+  const handleOpenTemplatePicker = () => {
+    setShowTemplatePicker(true)
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Navigation Bar */}
@@ -90,7 +148,15 @@ export default function Studio() {
       </div>
 
       {/* Toolbar */}
-      <MainToolbar />
+      <MainToolbar onOpenTemplatePicker={handleOpenTemplatePicker} />
+
+      {/* Template Picker Modal */}
+      <TemplatePickerModal
+        isOpen={showTemplatePicker}
+        onClose={() => setShowTemplatePicker(false)}
+        onSelectTemplate={handleSelectTemplate}
+        onStartBlank={handleStartBlank}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden relative">
@@ -340,6 +406,9 @@ export default function Studio() {
             </>
           )}
         </AnimatePresence>
+
+      {/* Template Guide - Floating Helper */}
+      {showTemplateGuide && <TemplateGuide onDismiss={() => setShowTemplateGuide(false)} />}
       </div>
     </div>
   )

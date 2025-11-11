@@ -24,12 +24,19 @@ import {
   Maximize2,
   ChevronDown,
   Download,
+  Sparkles,
 } from 'lucide-react'
 
-export default function MainToolbar() {
+interface MainToolbarProps {
+  onOpenTemplatePicker?: () => void
+}
+
+export default function MainToolbar({ onOpenTemplatePicker }: MainToolbarProps = {}) {
   const [showCanvasSizeMenu, setShowCanvasSizeMenu] = useState(false)
   const [showZoomMenu, setShowZoomMenu] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [labelName, setLabelName] = useState('')
   const zoom = useDesignerStore((state) => state.zoom)
   const selectedIds = useDesignerStore((state) => state.selectedIds)
   const gridVisible = useDesignerStore((state) => state.gridVisible)
@@ -54,6 +61,10 @@ export default function MainToolbar() {
   const canvasWidth = useDesignerStore((state) => state.canvasWidth)
   const canvasHeight = useDesignerStore((state) => state.canvasHeight)
   const setCanvasSize = useDesignerStore((state) => state.setCanvasSize)
+  const currentLabelId = useDesignerStore((state) => state.currentLabelId)
+  const currentLabelName = useDesignerStore((state) => state.currentLabelName)
+  const saveLabel = useDesignerStore((state) => state.saveLabel)
+  const isSaving = useDesignerStore((state) => state.isSaving)
 
   const hasSelection = selectedIds.length > 0
   const canUndo = history.past.length > 0
@@ -119,6 +130,25 @@ export default function MainToolbar() {
       link.href = dataURL
       link.click()
     }
+  }
+
+  const handleSave = () => {
+    if (currentLabelId) {
+      // If label already exists, save directly
+      saveLabel()
+    } else {
+      // If new label, show dialog to name it
+      setLabelName(currentLabelName)
+      setShowSaveDialog(true)
+    }
+  }
+
+  const handleSaveWithName = async () => {
+    if (!labelName.trim()) {
+      return
+    }
+    await saveLabel(labelName)
+    setShowSaveDialog(false)
   }
 
   return (
@@ -331,8 +361,18 @@ export default function MainToolbar() {
             </button>
           </div>
 
-          {/* Right side - Save & Export */}
+          {/* Right side - Templates, Export & Save */}
           <div className="flex items-center gap-1.5">
+            {onOpenTemplatePicker && (
+              <button
+                onClick={onOpenTemplatePicker}
+                className="flex items-center gap-1.5 bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition text-xs font-medium border border-purple-200"
+                title="Browse Templates"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Templates</span>
+              </button>
+            )}
             <button
               onClick={() => setShowExportDialog(true)}
               className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition text-xs font-medium"
@@ -342,11 +382,13 @@ export default function MainToolbar() {
               <span>Export</span>
             </button>
             <button
-              className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition text-xs font-medium shadow-sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition text-xs font-medium shadow-sm"
               title="Save Design"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Save</span>
+              <span>{isSaving ? 'Saving...' : 'Save'}</span>
             </button>
           </div>
         </div>
@@ -412,8 +454,17 @@ export default function MainToolbar() {
             )}
           </div>
 
-          {/* Right - Save & Export */}
+          {/* Right - Templates, Export & Save */}
           <div className="flex items-center gap-1">
+            {onOpenTemplatePicker && (
+              <button
+                onClick={onOpenTemplatePicker}
+                className="p-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 transition border border-purple-200"
+                title="Templates"
+              >
+                <Sparkles className="w-4 h-4 text-purple-700" />
+              </button>
+            )}
             <button
               onClick={() => setShowExportDialog(true)}
               className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition"
@@ -422,7 +473,9 @@ export default function MainToolbar() {
               <Download className="w-4 h-4 text-gray-700" />
             </button>
             <button
-              className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition shadow-sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
               title="Save"
             >
               <Save className="w-4 h-4 text-white" />
@@ -437,6 +490,46 @@ export default function MainToolbar() {
           onClose={() => setShowExportDialog(false)}
           onExport={handleExport}
         />
+      )}
+
+      {/* Save Dialog */}
+      {showSaveDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Save Label</h2>
+              <p className="text-sm text-gray-600 mb-4">Give your label a name so you can find it later.</p>
+              <input
+                type="text"
+                value={labelName}
+                onChange={(e) => setLabelName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveWithName()
+                  }
+                }}
+                placeholder="Enter label name..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                autoFocus
+              />
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowSaveDialog(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveWithName}
+                  disabled={!labelName.trim() || isSaving}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

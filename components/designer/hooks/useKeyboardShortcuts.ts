@@ -11,6 +11,8 @@ export function useKeyboardShortcuts() {
   const selectElement = useDesignerStore((state) => state.selectElement)
   const elements = useDesignerStore((state) => state.elements)
   const addElement = useDesignerStore((state) => state.addElement)
+  const saveLabel = useDesignerStore((state) => state.saveLabel)
+  const currentLabelId = useDesignerStore((state) => state.currentLabelId)
 
   // Use ref to store clipboard data (can't use localStorage for complex objects)
   const clipboardRef = useRef<DesignerElement[]>([])
@@ -46,6 +48,22 @@ export function useKeyboardShortcuts() {
       if ((cmdOrCtrl && e.shiftKey && e.key === 'z') || (cmdOrCtrl && e.key === 'y')) {
         e.preventDefault()
         redo()
+      }
+
+      // Save (Ctrl/Cmd + S)
+      if (cmdOrCtrl && e.key === 's') {
+        e.preventDefault()
+        // If we have a currentLabelId, save directly
+        // Otherwise, the save button will handle showing the dialog
+        if (currentLabelId) {
+          saveLabel()
+        } else {
+          // Trigger save button click to show dialog
+          const saveButton = document.querySelector('[title="Save Design"]') as HTMLButtonElement
+          if (saveButton) {
+            saveButton.click()
+          }
+        }
       }
 
       // Duplicate (Ctrl/Cmd + D)
@@ -99,5 +117,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedIds, deleteElements, duplicateElements, undo, redo, selectElement, elements, addElement])
+  }, [selectedIds, deleteElements, duplicateElements, undo, redo, selectElement, elements, addElement, saveLabel, currentLabelId])
 }

@@ -92,12 +92,12 @@ export default function LibraryPage() {
     if (searchQuery.trim()) {
       filtered = filtered.filter((label) => {
         const searchLower = searchQuery.toLowerCase()
-        const hasMatchingText = label.label_data.textElements.some((el) =>
+        const hasMatchingText = label.label_data?.textElements?.some((el) =>
           el.text.toLowerCase().includes(searchLower)
-        )
-        const matchesSize = label.label_size.toLowerCase().includes(searchLower)
-        const matchesTemplate = label.template_id.toLowerCase().includes(searchLower)
-        return hasMatchingText || matchesSize || matchesTemplate
+        ) || false
+        const matchesSize = label.label_size?.toLowerCase().includes(searchLower) || false
+        const matchesTemplate = label.template_id?.toLowerCase().includes(searchLower) || false
+        return hasMatchingText || matchesSize || matchesTemplate || label.name.toLowerCase().includes(searchLower)
       })
     }
 
@@ -109,7 +109,7 @@ export default function LibraryPage() {
         case 'date-old':
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         case 'size':
-          return a.label_size.localeCompare(b.label_size)
+          return (a.label_size || '').localeCompare(b.label_size || '')
         default:
           return 0
       }
@@ -230,10 +230,10 @@ export default function LibraryPage() {
                   {/* Preview */}
                   <div
                     className="h-52 flex items-center justify-center p-8"
-                    style={{ backgroundColor: label.label_data.backgroundColor }}
+                    style={{ backgroundColor: label.label_data?.backgroundColor || label.canvas_data?.backgroundColor || '#ffffff' }}
                   >
                     <div className="text-center max-w-full px-4">
-                      {label.label_data.textElements.slice(0, 2).map((element) => (
+                      {(label.label_data?.textElements || []).slice(0, 2).map((element) => (
                         <div
                           key={element.id}
                           style={{
@@ -247,7 +247,7 @@ export default function LibraryPage() {
                         </div>
                       ))}
                       <div className="text-sm text-gray-500 mt-3 font-medium">
-                        {label.label_size.replace('x', ' × ')}"
+                        {label.label_size?.replace('x', ' × ') || 'Custom'}"
                       </div>
                     </div>
                   </div>
@@ -259,7 +259,7 @@ export default function LibraryPage() {
                         {formatDate(label.created_at)}
                       </span>
                       <span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full font-medium">
-                        {label.template_id}
+                        {label.template_id || label.name || 'Custom'}
                       </span>
                     </div>
 

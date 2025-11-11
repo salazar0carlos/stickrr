@@ -48,7 +48,22 @@ const ContextMenu = memo(function ContextMenu({ x, y, elementId, onClose }: Cont
 
   if (!element) return null
 
+  const isLocked = element.locked
+
   const menuItems = [
+    // Show locked indicator if element is locked
+    ...(isLocked
+      ? [
+          {
+            label: 'Locked Element',
+            icon: Lock,
+            onClick: () => {},
+            disabled: true,
+            info: true,
+          },
+          { divider: true },
+        ]
+      : []),
     {
       label: 'Duplicate',
       icon: Copy,
@@ -56,6 +71,7 @@ const ContextMenu = memo(function ContextMenu({ x, y, elementId, onClose }: Cont
         duplicateElements([element.id])
         onClose()
       },
+      disabled: isLocked,
     },
     {
       label: element.locked ? 'Unlock' : 'Lock',
@@ -81,6 +97,7 @@ const ContextMenu = memo(function ContextMenu({ x, y, elementId, onClose }: Cont
         moveToFront([element.id])
         onClose()
       },
+      disabled: isLocked,
     },
     {
       label: 'Send to Back',
@@ -89,16 +106,20 @@ const ContextMenu = memo(function ContextMenu({ x, y, elementId, onClose }: Cont
         moveToBack([element.id])
         onClose()
       },
+      disabled: isLocked,
     },
     { divider: true },
     {
       label: 'Delete',
       icon: Trash2,
       onClick: () => {
-        deleteElements([element.id])
+        if (!isLocked) {
+          deleteElements([element.id])
+        }
         onClose()
       },
       danger: true,
+      disabled: isLocked,
     },
   ]
 
@@ -114,12 +135,20 @@ const ContextMenu = memo(function ContextMenu({ x, y, elementId, onClose }: Cont
         }
 
         const Icon = item.icon
+        const isDisabled = 'disabled' in item && item.disabled
+        const isInfo = 'info' in item && item.info
+
         return (
           <button
             key={index}
-            onClick={item.onClick}
+            onClick={!isDisabled ? item.onClick : undefined}
+            disabled={isDisabled}
             className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition ${
-              item.danger
+              isInfo
+                ? 'text-amber-700 bg-amber-50 cursor-default'
+                : isDisabled
+                ? 'text-gray-400 cursor-not-allowed opacity-50'
+                : item.danger
                 ? 'text-red-600 hover:bg-red-50'
                 : 'text-gray-700 hover:bg-gray-100'
             }`}

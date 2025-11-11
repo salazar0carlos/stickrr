@@ -6,7 +6,7 @@ import type { TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { HexColorPicker } from 'react-colorful'
 import { FONT_FAMILIES, FONT_SIZE_PRESETS } from '@/lib/designerConstants'
 import RecentColors from './RecentColors'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Lock, Unlock } from 'lucide-react'
 
 const MAX_RECENT_COLORS = 12
 
@@ -37,16 +37,31 @@ export default function PropertiesPanel() {
     )
   }
 
-  const renderTextProperties = (element: TextElement) => (
+  const renderTextProperties = (element: TextElement) => {
+    const isLocked = element.locked
+
+    return (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-2">Text Content</label>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Text Content
+          {isLocked && (
+            <span className="ml-2 text-xs text-emerald-600 font-normal">
+              (Editable)
+            </span>
+          )}
+        </label>
         <textarea
           value={element.content}
           onChange={(e) => updateElement(element.id, { content: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           rows={3}
         />
+        {isLocked && (
+          <p className="text-xs text-emerald-600 mt-1 font-medium">
+            You can edit the text content even though this element is locked
+          </p>
+        )}
       </div>
 
       <div>
@@ -54,7 +69,8 @@ export default function PropertiesPanel() {
         <select
           value={element.fontFamily}
           onChange={(e) => updateElement(element.id, { fontFamily: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+          disabled={isLocked}
         >
           {FONT_FAMILIES.map((font) => (
             <option key={font} value={font} style={{ fontFamily: font }}>
@@ -70,12 +86,13 @@ export default function PropertiesPanel() {
           {FONT_SIZE_PRESETS.slice(0, 10).map((size) => (
             <button
               key={size}
-              onClick={() => updateElement(element.id, { fontSize: size })}
+              onClick={() => !isLocked && updateElement(element.id, { fontSize: size })}
+              disabled={isLocked}
               className={`px-2 py-1 rounded text-xs font-medium transition ${
                 element.fontSize === size
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {size}
             </button>
@@ -85,7 +102,8 @@ export default function PropertiesPanel() {
           type="number"
           value={element.fontSize}
           onChange={(e) => updateElement(element.id, { fontSize: Number(e.target.value) })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+          disabled={isLocked}
         />
       </div>
 
@@ -94,7 +112,8 @@ export default function PropertiesPanel() {
         <select
           value={element.fontWeight}
           onChange={(e) => updateElement(element.id, { fontWeight: Number(e.target.value) })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+          disabled={isLocked}
         >
           <option value={300}>Light</option>
           <option value={400}>Regular</option>
@@ -108,8 +127,9 @@ export default function PropertiesPanel() {
         <label className="block text-xs font-medium text-gray-700 mb-2">Text Color</label>
         <div className="relative">
           <button
-            onClick={() => setShowColorPicker(showColorPicker === 'text' ? null : 'text')}
-            className="w-full flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            onClick={() => !isLocked && setShowColorPicker(showColorPicker === 'text' ? null : 'text')}
+            disabled={isLocked}
+            className="w-full flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
             <div
               className="w-6 h-6 rounded border border-gray-300"
@@ -117,7 +137,7 @@ export default function PropertiesPanel() {
             />
             <span className="text-sm text-gray-700 uppercase">{element.color}</span>
           </button>
-          {showColorPicker === 'text' && (
+          {showColorPicker === 'text' && !isLocked && (
             <div className="absolute z-10 mt-2 bg-white p-3 rounded-lg shadow-lg border border-gray-200">
               <HexColorPicker
                 color={element.color}
@@ -144,12 +164,13 @@ export default function PropertiesPanel() {
           {(['left', 'center', 'right'] as const).map((align) => (
             <button
               key={align}
-              onClick={() => updateElement(element.id, { textAlign: align })}
+              onClick={() => !isLocked && updateElement(element.id, { textAlign: align })}
+              disabled={isLocked}
               className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
                 element.textAlign === align
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {align.charAt(0).toUpperCase() + align.slice(1)}
             </button>
@@ -157,7 +178,8 @@ export default function PropertiesPanel() {
         </div>
       </div>
     </div>
-  )
+    )
+  }
 
   const renderShapeProperties = (element: ShapeElement) => (
     <div className="space-y-4">
@@ -348,7 +370,10 @@ export default function PropertiesPanel() {
     </div>
   )
 
-  const renderCommonProperties = () => (
+  const renderCommonProperties = () => {
+    const isLocked = selectedElement.locked
+
+    return (
     <div className="space-y-4 pt-4 border-t border-gray-200">
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -357,7 +382,8 @@ export default function PropertiesPanel() {
             type="number"
             value={Math.round(selectedElement.x)}
             onChange={(e) => updateElement(selectedElement.id, { x: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isLocked}
           />
         </div>
         <div>
@@ -366,7 +392,8 @@ export default function PropertiesPanel() {
             type="number"
             value={Math.round(selectedElement.y)}
             onChange={(e) => updateElement(selectedElement.id, { y: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isLocked}
           />
         </div>
       </div>
@@ -378,7 +405,8 @@ export default function PropertiesPanel() {
             type="number"
             value={Math.round(selectedElement.width)}
             onChange={(e) => updateElement(selectedElement.id, { width: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isLocked}
           />
         </div>
         <div>
@@ -387,7 +415,8 @@ export default function PropertiesPanel() {
             type="number"
             value={Math.round(selectedElement.height)}
             onChange={(e) => updateElement(selectedElement.id, { height: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isLocked}
           />
         </div>
       </div>
@@ -398,7 +427,8 @@ export default function PropertiesPanel() {
           type="number"
           value={Math.round(selectedElement.rotation)}
           onChange={(e) => updateElement(selectedElement.id, { rotation: Number(e.target.value) })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+          disabled={isLocked}
           min={-180}
           max={180}
         />
@@ -410,7 +440,8 @@ export default function PropertiesPanel() {
           type="range"
           value={selectedElement.opacity}
           onChange={(e) => updateElement(selectedElement.id, { opacity: Number(e.target.value) })}
-          className="w-full"
+          className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isLocked}
           min={0}
           max={1}
           step={0.1}
@@ -484,11 +515,42 @@ export default function PropertiesPanel() {
         )}
       </div>
     </div>
-  )
+    )
+  }
 
   return (
     <div className="p-4 space-y-4">
       <h3 className="text-sm font-semibold text-gray-700">Properties</h3>
+
+      {/* Locked Element Indicator */}
+      {selectedElement.locked && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <Lock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-amber-900 mb-1">
+                Template Design Element
+              </h4>
+              <p className="text-xs text-amber-700 mb-2">
+                This element is part of the template design. Most properties are locked to preserve the professional look.
+              </p>
+              {selectedElement.type === 'text' && (
+                <p className="text-xs text-amber-600 font-medium">
+                  You can edit: Text content only
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => updateElement(selectedElement.id, { locked: false })}
+            className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-50 transition text-xs font-medium"
+          >
+            <Unlock className="w-3.5 h-3.5" />
+            Unlock Element (Advanced)
+          </button>
+        </div>
+      )}
+
       <div className="text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
         {selectedElement.type === 'text' && 'Text Element'}
         {selectedElement.type === 'shape' && `${(selectedElement as ShapeElement).shapeType} Shape`}

@@ -49,9 +49,11 @@ export interface Template {
 export interface Label {
   id: string
   user_id: string
-  template_id: string
-  label_size: LabelSize
-  label_data: LabelData
+  name: string
+  template_id?: string // Made optional for backward compatibility
+  label_size?: LabelSize // Made optional for backward compatibility
+  canvas_data: any // Full CanvasState serialized as JSON
+  label_data?: LabelData // Keep for backward compatibility
   created_at: string
   updated_at: string
 }
