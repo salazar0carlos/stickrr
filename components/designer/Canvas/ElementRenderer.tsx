@@ -1,0 +1,159 @@
+'use client'
+
+import React, { useRef, useEffect } from 'react'
+import { Text, Rect, Circle, Image as KonvaImage, Transformer } from 'react-konva'
+import type { DesignerElement, TextElement, ShapeElement, ImageElement } from '@/types/designer'
+import { useDesignerStore } from '@/store/designerStore'
+
+interface ElementRendererProps {
+  element: DesignerElement
+  isSelected: boolean
+  onSelect: () => void
+  onDragEnd: (e: any) => void
+}
+
+export default function ElementRenderer({
+  element,
+  isSelected,
+  onSelect,
+  onDragEnd,
+}: ElementRendererProps) {
+  const transformerRef = useRef<any>(null)
+  const shapeRef = useRef<any>(null)
+  const updateElement = useDesignerStore((state) => state.updateElement)
+
+  useEffect(() => {
+    if (isSelected && transformerRef.current && shapeRef.current) {
+      transformerRef.current.nodes([shapeRef.current])
+      transformerRef.current.getLayer().batchDraw()
+    }
+  }, [isSelected])
+
+  const handleTransformEnd = () => {
+    const node = shapeRef.current
+    if (!node) return
+
+    const scaleX = node.scaleX()
+    const scaleY = node.scaleY()
+
+    // Reset scale and update width/height
+    node.scaleX(1)
+    node.scaleY(1)
+
+    updateElement(element.id, {
+      x: node.x(),
+      y: node.y(),
+      width: Math.max(5, node.width() * scaleX),
+      height: Math.max(5, node.height() * scaleY),
+      rotation: node.rotation(),
+    })
+  }
+
+  const commonProps = {
+    ref: shapeRef,
+    x: element.x,
+    y: element.y,
+    rotation: element.rotation,
+    opacity: element.opacity,
+    draggable: !element.locked,
+    onClick: onSelect,
+    onTap: onSelect,
+    onDragEnd: (e: any) => {
+      onDragEnd(e)
+      updateElement(element.id, {
+        x: e.target.x(),
+        y: e.target.y(),
+      })
+    },
+    onTransformEnd: handleTransformEnd,
+  }
+
+  const renderElement = () => {
+    switch (element.type) {
+      case 'text': {
+        const textEl = element as TextElement
+        return (
+          <Text
+            {...commonProps}
+            text={textEl.content}
+            fontSize={textEl.fontSize}
+            fontFamily={textEl.fontFamily}
+            fontStyle={textEl.fontStyle === 'italic' ? 'italic' : 'normal'}
+            textDecoration={textEl.textDecoration || 'none'}
+            fill={textEl.color}
+            align={textEl.textAlign}
+            width={textEl.width}
+            height={textEl.height}
+            lineHeight={textEl.lineHeight}
+            letterSpacing={textEl.letterSpacing}
+          />
+        )
+      }
+
+      case 'shape': {
+        const shapeEl = element as ShapeElement
+        if (shapeEl.shapeType === 'rectangle') {
+          return (
+            <Rect
+              {...commonProps}
+              width={shapeEl.width}
+              height={shapeEl.height}
+              fill={shapeEl.fill}
+              stroke={shapeEl.stroke}
+              strokeWidth={shapeEl.strokeWidth}
+              cornerRadius={shapeEl.cornerRadius || 0}
+            />
+          )
+        } else if (shapeEl.shapeType === 'circle') {
+          return (
+            <Circle
+              {...commonProps}
+              radius={Math.min(shapeEl.width, shapeEl.height) / 2}
+              fill={shapeEl.fill}
+              stroke={shapeEl.stroke}
+              strokeWidth={shapeEl.strokeWidth}
+            />
+          )
+        }
+        return null
+      }
+
+      case 'image': {
+        const imageEl = element as ImageElement
+        // Image rendering would require loading the image first
+        // For now, we'll just render a placeholder rectangle
+        return (
+          <Rect
+            {...commonProps}
+            width={imageEl.width}
+            height={imageEl.height}
+            fill="#e0e0e0"
+            stroke="#999"
+            strokeWidth={1}
+          />
+        )
+      }
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <>
+      {renderElement()}
+      {isSelected && (
+        <Transformer
+          ref={transformerRef}
+          boundBoxFunc={(oldBox, newBox) => {
+            // Limit resize to minimum size
+            if (newBox.width < 5 || newBox.height < 5) {
+              return oldBox
+            }
+            return newBox
+          }}
+        />
+      )}
+    </>
+  )
+}

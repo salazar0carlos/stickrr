@@ -43,6 +43,14 @@ export default function Navbar() {
                   Designer
                 </Link>
                 <Link
+                  href="/advanced-designer"
+                  className={`${
+                    pathname === '/advanced-designer' ? 'text-indigo-600' : 'text-gray-700'
+                  } hover:text-indigo-600 transition`}
+                >
+                  Advanced Designer
+                </Link>
+                <Link
                   href="/library"
                   className={`${
                     pathname === '/library' ? 'text-indigo-600' : 'text-gray-700'
@@ -112,6 +120,13 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Designer
+                </Link>
+                <Link
+                  href="/advanced-designer"
+                  className="block text-gray-700 hover:text-indigo-600 transition py-3 px-2 rounded-lg hover:bg-gray-50"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Advanced Designer
                 </Link>
                 <Link
                   href="/library"
