@@ -10,6 +10,7 @@ interface ElementRendererProps {
   isSelected: boolean
   onSelect: (e: any) => void
   onDragEnd: (e: any) => void
+  onContextMenu?: (e: any, elementId: string) => void
 }
 
 export default function ElementRenderer({
@@ -17,6 +18,7 @@ export default function ElementRenderer({
   isSelected,
   onSelect,
   onDragEnd,
+  onContextMenu,
 }: ElementRendererProps) {
   const transformerRef = useRef<any>(null)
   const shapeRef = useRef<any>(null)
@@ -68,6 +70,12 @@ export default function ElementRenderer({
     draggable: !element.locked,
     onClick: onSelect,
     onTap: onSelect,
+    onContextMenu: (e: any) => {
+      e.evt.preventDefault()
+      if (onContextMenu) {
+        onContextMenu(e, element.id)
+      }
+    },
     onDragEnd: (e: any) => {
       onDragEnd(e)
       const newX = snapToGridValue(e.target.x())

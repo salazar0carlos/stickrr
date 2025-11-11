@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { Stage, Layer, Rect, Line } from 'react-konva'
 import ElementRenderer from './ElementRenderer'
+import ContextMenu from './ContextMenu'
 import { useDesignerStore } from '@/store/designerStore'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { KonvaEventObject } from 'konva/lib/Node'
@@ -14,6 +15,11 @@ interface DesignCanvasProps {
 
 export default function DesignCanvas({ width, height }: DesignCanvasProps) {
   const stageRef = useRef<any>(null)
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    elementId: string | null
+  } | null>(null)
 
   const elements = useDesignerStore((state) => state.elements)
   const selectedIds = useDesignerStore((state) => state.selectedIds)
@@ -149,6 +155,13 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
                 const isMultiSelect = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey
                 selectElement(element.id, isMultiSelect)
               }}
+              onContextMenu={(e, elementId) => {
+                setContextMenu({
+                  x: e.evt.clientX,
+                  y: e.evt.clientY,
+                  elementId,
+                })
+              }}
               onDragEnd={() => {}}
             />
           ))}
@@ -159,6 +172,16 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
       <div className="absolute bottom-4 right-4 bg-white px-3 py-1 rounded-lg shadow-md text-sm font-medium text-gray-700">
         {Math.round(zoom * 100)}%
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          elementId={contextMenu.elementId}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   )
 }
