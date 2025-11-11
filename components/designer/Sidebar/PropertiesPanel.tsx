@@ -1,10 +1,14 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
-import type { TextElement, ShapeElement } from '@/types/designer'
+import type { TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { HexColorPicker } from 'react-colorful'
+import { FONT_FAMILIES, FONT_SIZE_PRESETS } from '@/lib/designerConstants'
+import RecentColors from './RecentColors'
 import { ChevronDown } from 'lucide-react'
+
+const MAX_RECENT_COLORS = 12
 
 export default function PropertiesPanel() {
   const elements = useDesignerStore((state) => state.elements)
@@ -13,7 +17,15 @@ export default function PropertiesPanel() {
 
   const selectedElement = elements.find((el) => el.id === selectedIds[0])
 
-  const [showColorPicker, setShowColorPicker] = React.useState<string | null>(null)
+  const [showColorPicker, setShowColorPicker] = useState<string | null>(null)
+  const [recentColors, setRecentColors] = useState<string[]>([])
+
+  const addToRecentColors = (color: string) => {
+    setRecentColors((prev) => {
+      const filtered = prev.filter((c) => c !== color)
+      return [color, ...filtered].slice(0, MAX_RECENT_COLORS)
+    })
+  }
 
   if (!selectedElement) {
     return (
@@ -37,30 +49,59 @@ export default function PropertiesPanel() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">Font Size</label>
-          <input
-            type="number"
-            value={element.fontSize}
-            onChange={(e) => updateElement(element.id, { fontSize: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
-          />
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Font Family</label>
+        <select
+          value={element.fontFamily}
+          onChange={(e) => updateElement(element.id, { fontFamily: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+        >
+          {FONT_FAMILIES.map((font) => (
+            <option key={font} value={font} style={{ fontFamily: font }}>
+              {font}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Font Size</label>
+        <div className="grid grid-cols-5 gap-1.5 mb-2">
+          {FONT_SIZE_PRESETS.slice(0, 10).map((size) => (
+            <button
+              key={size}
+              onClick={() => updateElement(element.id, { fontSize: size })}
+              className={`px-2 py-1 rounded text-xs font-medium transition ${
+                element.fontSize === size
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {size}
+            </button>
+          ))}
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">Font Weight</label>
-          <select
-            value={element.fontWeight}
-            onChange={(e) => updateElement(element.id, { fontWeight: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value={300}>Light</option>
-            <option value={400}>Regular</option>
-            <option value={500}>Medium</option>
-            <option value={600}>Semibold</option>
-            <option value={700}>Bold</option>
-          </select>
-        </div>
+        <input
+          type="number"
+          value={element.fontSize}
+          onChange={(e) => updateElement(element.id, { fontSize: Number(e.target.value) })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Font Weight</label>
+        <select
+          value={element.fontWeight}
+          onChange={(e) => updateElement(element.id, { fontWeight: Number(e.target.value) })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value={300}>Light</option>
+          <option value={400}>Regular</option>
+          <option value={500}>Medium</option>
+          <option value={600}>Semibold</option>
+          <option value={700}>Bold</option>
+        </select>
       </div>
 
       <div>
@@ -77,10 +118,20 @@ export default function PropertiesPanel() {
             <span className="text-sm text-gray-700 uppercase">{element.color}</span>
           </button>
           {showColorPicker === 'text' && (
-            <div className="absolute z-10 mt-2">
+            <div className="absolute z-10 mt-2 bg-white p-3 rounded-lg shadow-lg border border-gray-200">
               <HexColorPicker
                 color={element.color}
-                onChange={(color) => updateElement(element.id, { color })}
+                onChange={(color) => {
+                  updateElement(element.id, { color })
+                  addToRecentColors(color)
+                }}
+              />
+              <RecentColors
+                recentColors={recentColors}
+                onColorSelect={(color) => {
+                  updateElement(element.id, { color })
+                  setShowColorPicker(null)
+                }}
               />
             </div>
           )}
@@ -184,6 +235,119 @@ export default function PropertiesPanel() {
     </div>
   )
 
+  const renderImageProperties = (element: ImageElement) => (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Image Info</label>
+        <div className="bg-gray-50 px-3 py-2 rounded-lg text-xs text-gray-600 space-y-1">
+          <div>Original: {element.originalWidth} × {element.originalHeight}px</div>
+          <div>Current: {Math.round(element.width)} × {Math.round(element.height)}px</div>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Flip</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => updateElement(element.id, { flipX: !element.flipX })}
+            className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
+              element.flipX
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Flip Horizontal
+          </button>
+          <button
+            onClick={() => updateElement(element.id, { flipY: !element.flipY })}
+            className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
+              element.flipY
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Flip Vertical
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Brightness: {element.brightness || 100}%
+        </label>
+        <input
+          type="range"
+          value={element.brightness || 100}
+          onChange={(e) => updateElement(element.id, { brightness: Number(e.target.value) })}
+          className="w-full"
+          min={0}
+          max={200}
+          step={5}
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Contrast: {element.contrast || 100}%
+        </label>
+        <input
+          type="range"
+          value={element.contrast || 100}
+          onChange={(e) => updateElement(element.id, { contrast: Number(e.target.value) })}
+          className="w-full"
+          min={0}
+          max={200}
+          step={5}
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Saturation: {element.saturation || 100}%
+        </label>
+        <input
+          type="range"
+          value={element.saturation || 100}
+          onChange={(e) => updateElement(element.id, { saturation: Number(e.target.value) })}
+          className="w-full"
+          min={0}
+          max={200}
+          step={5}
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Blur: {element.blur || 0}
+        </label>
+        <input
+          type="range"
+          value={element.blur || 0}
+          onChange={(e) => updateElement(element.id, { blur: Number(e.target.value) })}
+          className="w-full"
+          min={0}
+          max={20}
+          step={1}
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Aspect Ratio</label>
+        <button
+          onClick={() => {
+            const ratio = element.originalWidth / element.originalHeight
+            updateElement(element.id, {
+              height: element.width / ratio
+            })
+          }}
+          className="w-full px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium"
+        >
+          Reset to Original Ratio
+        </button>
+      </div>
+    </div>
+  )
+
   const renderCommonProperties = () => (
     <div className="space-y-4 pt-4 border-t border-gray-200">
       <div className="grid grid-cols-2 gap-3">
@@ -255,6 +419,70 @@ export default function PropertiesPanel() {
           {Math.round(selectedElement.opacity * 100)}%
         </div>
       </div>
+
+      <div className="pt-4 border-t border-gray-200">
+        <h4 className="text-xs font-semibold text-gray-700 mb-3">Shadow</h4>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-2">
+            Shadow Blur: {selectedElement.shadowBlur || 0}px
+          </label>
+          <input
+            type="range"
+            value={selectedElement.shadowBlur || 0}
+            onChange={(e) => updateElement(selectedElement.id, { shadowBlur: Number(e.target.value) })}
+            className="w-full"
+            min={0}
+            max={50}
+            step={1}
+          />
+        </div>
+
+        {(selectedElement.shadowBlur || 0) > 0 && (
+          <>
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-700 mb-2">Shadow Color</label>
+              <input
+                type="color"
+                value={selectedElement.shadowColor || '#000000'}
+                onChange={(e) => updateElement(selectedElement.id, { shadowColor: e.target.value })}
+                className="w-full h-10 rounded-lg border border-gray-300 cursor-pointer"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Offset X: {selectedElement.shadowOffsetX || 0}
+                </label>
+                <input
+                  type="range"
+                  value={selectedElement.shadowOffsetX || 0}
+                  onChange={(e) => updateElement(selectedElement.id, { shadowOffsetX: Number(e.target.value) })}
+                  className="w-full"
+                  min={-50}
+                  max={50}
+                  step={1}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Offset Y: {selectedElement.shadowOffsetY || 0}
+                </label>
+                <input
+                  type="range"
+                  value={selectedElement.shadowOffsetY || 0}
+                  onChange={(e) => updateElement(selectedElement.id, { shadowOffsetY: Number(e.target.value) })}
+                  className="w-full"
+                  min={-50}
+                  max={50}
+                  step={1}
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 
@@ -269,6 +497,7 @@ export default function PropertiesPanel() {
 
       {selectedElement.type === 'text' && renderTextProperties(selectedElement as TextElement)}
       {selectedElement.type === 'shape' && renderShapeProperties(selectedElement as ShapeElement)}
+      {selectedElement.type === 'image' && renderImageProperties(selectedElement as ImageElement)}
 
       {renderCommonProperties()}
     </div>

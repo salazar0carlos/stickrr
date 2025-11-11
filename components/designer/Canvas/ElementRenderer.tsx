@@ -1,26 +1,89 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState, memo } from 'react'
 import { Text, Rect, Circle, Line, Image as KonvaImage, Transformer } from 'react-konva'
 import type { DesignerElement, TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { useDesignerStore } from '@/store/designerStore'
+import useImage from 'use-image'
 
 interface ElementRendererProps {
   element: DesignerElement
   isSelected: boolean
   onSelect: (e: any) => void
   onDragEnd: (e: any) => void
+  onContextMenu?: (e: any, elementId: string) => void
+  onDoubleClick?: (elementId: string) => void
 }
 
-export default function ElementRenderer({
+// Separate component for image rendering to use the useImage hook
+const ImageRenderer = memo(function ImageRenderer({ element, commonProps }: { element: ImageElement; commonProps: any }) {
+  const [image] = useImage(element.src)
+  const imageRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (imageRef.current && image) {
+      // Apply filters using Konva's cache and filters
+      const node = imageRef.current
+
+      // Apply brightness, contrast, saturation filters
+      if (element.brightness !== undefined && element.brightness !== 100) {
+        const brightnessValue = (element.brightness - 100) / 100
+        node.cache()
+        node.brightness(brightnessValue)
+      }
+
+      if (element.blur && element.blur > 0) {
+        node.cache()
+        node.blurRadius(element.blur)
+      }
+
+      node.getLayer()?.batchDraw()
+    }
+  }, [image, element.brightness, element.contrast, element.saturation, element.blur])
+
+  if (!image) {
+    // Show placeholder while image is loading
+    return (
+      <Rect
+        {...commonProps}
+        width={element.width}
+        height={element.height}
+        fill="#f0f0f0"
+        stroke="#ccc"
+        strokeWidth={1}
+        dash={[5, 5]}
+      />
+    )
+  }
+
+  return (
+    <KonvaImage
+      {...commonProps}
+      ref={imageRef}
+      image={image}
+      width={element.width}
+      height={element.height}
+      scaleX={element.flipX ? -1 : 1}
+      scaleY={element.flipY ? -1 : 1}
+      offsetX={element.flipX ? element.width : 0}
+      offsetY={element.flipY ? element.height : 0}
+    />
+  )
+})
+
+const ElementRenderer = memo(function ElementRenderer({
   element,
   isSelected,
   onSelect,
   onDragEnd,
+  onContextMenu,
+  onDoubleClick,
 }: ElementRendererProps) {
   const transformerRef = useRef<any>(null)
   const shapeRef = useRef<any>(null)
   const updateElement = useDesignerStore((state) => state.updateElement)
+  const snapToGrid = useDesignerStore((state) => state.snapToGrid)
+  const gridSize = useDesignerStore((state) => state.gridSize)
 
   useEffect(() => {
     if (isSelected && transformerRef.current && shapeRef.current) {
@@ -31,6 +94,11 @@ export default function ElementRenderer({
 
   // Don't render hidden elements
   if (!element.visible) return null
+
+  const snapToGridValue = (value: number) => {
+    if (!snapToGrid) return value
+    return Math.round(value / gridSize) * gridSize
+  }
 
   const handleTransformEnd = () => {
     const node = shapeRef.current
@@ -61,12 +129,28 @@ export default function ElementRenderer({
     draggable: !element.locked,
     onClick: onSelect,
     onTap: onSelect,
+    shadowColor: element.shadowColor || 'rgba(0,0,0,0)',
+    shadowBlur: element.shadowBlur || 0,
+    shadowOffsetX: element.shadowOffsetX || 0,
+    shadowOffsetY: element.shadowOffsetY || 0,
+    shadowOpacity: element.shadowOpacity || 0.5,
+    onContextMenu: (e: any) => {
+      e.evt.preventDefault()
+      if (onContextMenu) {
+        onContextMenu(e, element.id)
+      }
+    },
     onDragEnd: (e: any) => {
       onDragEnd(e)
+      const newX = snapToGridValue(e.target.x())
+      const newY = snapToGridValue(e.target.y())
       updateElement(element.id, {
-        x: e.target.x(),
-        y: e.target.y(),
+        x: newX,
+        y: newY,
       })
+      // Snap the visual position too
+      e.target.x(newX)
+      e.target.y(newY)
     },
     onTransformEnd: handleTransformEnd,
   }
@@ -89,6 +173,11 @@ export default function ElementRenderer({
             height={textEl.height}
             lineHeight={textEl.lineHeight}
             letterSpacing={textEl.letterSpacing}
+            onDblClick={() => {
+              if (onDoubleClick) {
+                onDoubleClick(element.id)
+              }
+            }}
           />
         )
       }
@@ -143,18 +232,7 @@ export default function ElementRenderer({
 
       case 'image': {
         const imageEl = element as ImageElement
-        // Image rendering would require loading the image first
-        // For now, we'll just render a placeholder rectangle
-        return (
-          <Rect
-            {...commonProps}
-            width={imageEl.width}
-            height={imageEl.height}
-            fill="#e0e0e0"
-            stroke="#999"
-            strokeWidth={1}
-          />
-        )
+        return <ImageRenderer element={imageEl} commonProps={commonProps} />
       }
 
       default:
@@ -179,4 +257,6 @@ export default function ElementRenderer({
       )}
     </>
   )
-}
+})
+
+export default ElementRenderer

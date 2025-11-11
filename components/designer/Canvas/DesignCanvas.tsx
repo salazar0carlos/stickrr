@@ -1,11 +1,14 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { Stage, Layer, Rect, Line } from 'react-konva'
 import ElementRenderer from './ElementRenderer'
+import ContextMenu from './ContextMenu'
+import InlineTextEditor from './InlineTextEditor'
 import { useDesignerStore } from '@/store/designerStore'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { KonvaEventObject } from 'konva/lib/Node'
+import type { TextElement } from '@/types/designer'
 
 interface DesignCanvasProps {
   width: number
@@ -14,6 +17,12 @@ interface DesignCanvasProps {
 
 export default function DesignCanvas({ width, height }: DesignCanvasProps) {
   const stageRef = useRef<any>(null)
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    elementId: string | null
+  } | null>(null)
+  const [editingTextId, setEditingTextId] = useState<string | null>(null)
 
   const elements = useDesignerStore((state) => state.elements)
   const selectedIds = useDesignerStore((state) => state.selectedIds)
@@ -27,12 +36,33 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
 
   const selectElement = useDesignerStore((state) => state.selectElement)
   const clearSelection = useDesignerStore((state) => state.clearSelection)
+  const updateElement = useDesignerStore((state) => state.updateElement)
 
   // Enable keyboard shortcuts
   useKeyboardShortcuts()
 
   // Sort elements by zIndex
   const sortedElements = [...elements].sort((a, b) => a.zIndex - b.zIndex)
+
+  // Text editing handlers
+  const handleDoubleClickText = (elementId: string) => {
+    setEditingTextId(elementId)
+  }
+
+  const handleFinishTextEdit = (newText: string) => {
+    if (editingTextId) {
+      updateElement(editingTextId, { content: newText })
+      setEditingTextId(null)
+    }
+  }
+
+  const handleCancelTextEdit = () => {
+    setEditingTextId(null)
+  }
+
+  const editingElement = editingTextId
+    ? (elements.find((el) => el.id === editingTextId) as TextElement)
+    : null
 
   const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
     // Click on empty area - clear selection
@@ -149,6 +179,14 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
                 const isMultiSelect = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey
                 selectElement(element.id, isMultiSelect)
               }}
+              onContextMenu={(e, elementId) => {
+                setContextMenu({
+                  x: e.evt.clientX,
+                  y: e.evt.clientY,
+                  elementId,
+                })
+              }}
+              onDoubleClick={handleDoubleClickText}
               onDragEnd={() => {}}
             />
           ))}
@@ -159,6 +197,27 @@ export default function DesignCanvas({ width, height }: DesignCanvasProps) {
       <div className="absolute bottom-4 right-4 bg-white px-3 py-1 rounded-lg shadow-md text-sm font-medium text-gray-700">
         {Math.round(zoom * 100)}%
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          elementId={contextMenu.elementId}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {/* Inline Text Editor */}
+      {editingElement && (
+        <InlineTextEditor
+          element={editingElement}
+          zoom={zoom}
+          pan={pan}
+          onFinish={handleFinishTextEdit}
+          onCancel={handleCancelTextEdit}
+        />
+      )}
     </div>
   )
 }
