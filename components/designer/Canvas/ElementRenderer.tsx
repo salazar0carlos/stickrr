@@ -18,6 +18,28 @@ interface ElementRendererProps {
 // Separate component for image rendering to use the useImage hook
 const ImageRenderer = memo(function ImageRenderer({ element, commonProps }: { element: ImageElement; commonProps: any }) {
   const [image] = useImage(element.src)
+  const imageRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (imageRef.current && image) {
+      // Apply filters using Konva's cache and filters
+      const node = imageRef.current
+
+      // Apply brightness, contrast, saturation filters
+      if (element.brightness !== undefined && element.brightness !== 100) {
+        const brightnessValue = (element.brightness - 100) / 100
+        node.cache()
+        node.brightness(brightnessValue)
+      }
+
+      if (element.blur && element.blur > 0) {
+        node.cache()
+        node.blurRadius(element.blur)
+      }
+
+      node.getLayer()?.batchDraw()
+    }
+  }, [image, element.brightness, element.contrast, element.saturation, element.blur])
 
   if (!image) {
     // Show placeholder while image is loading
@@ -37,9 +59,14 @@ const ImageRenderer = memo(function ImageRenderer({ element, commonProps }: { el
   return (
     <KonvaImage
       {...commonProps}
+      ref={imageRef}
       image={image}
       width={element.width}
       height={element.height}
+      scaleX={element.flipX ? -1 : 1}
+      scaleY={element.flipY ? -1 : 1}
+      offsetX={element.flipX ? element.width : 0}
+      offsetY={element.flipY ? element.height : 0}
     />
   )
 })
@@ -102,6 +129,11 @@ const ElementRenderer = memo(function ElementRenderer({
     draggable: !element.locked,
     onClick: onSelect,
     onTap: onSelect,
+    shadowColor: element.shadowColor || 'rgba(0,0,0,0)',
+    shadowBlur: element.shadowBlur || 0,
+    shadowOffsetX: element.shadowOffsetX || 0,
+    shadowOffsetY: element.shadowOffsetY || 0,
+    shadowOpacity: element.shadowOpacity || 0.5,
     onContextMenu: (e: any) => {
       e.evt.preventDefault()
       if (onContextMenu) {

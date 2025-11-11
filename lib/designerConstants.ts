@@ -15,6 +15,7 @@ export const LABEL_SIZES = {
 export type LabelSizeKey = keyof typeof LABEL_SIZES
 
 export const FONT_FAMILIES = [
+  // System Fonts
   'Inter',
   'Arial',
   'Helvetica',
@@ -29,6 +30,7 @@ export const FONT_FAMILIES = [
   'Garamond',
   'Bookman',
   'Avant Garde',
+  // Google Fonts - Sans Serif
   'Roboto',
   'Open Sans',
   'Lato',
@@ -37,7 +39,40 @@ export const FONT_FAMILIES = [
   'Oswald',
   'Raleway',
   'PT Sans',
+  'Nunito',
+  'Ubuntu',
+  'Quicksand',
+  'Work Sans',
+  'Rubik',
+  'Karla',
+  'Mulish',
+  'Barlow',
+  'Bebas Neue',
+  'Archivo',
+  'Hind',
+  'Outfit',
+  // Google Fonts - Serif
   'Merriweather',
+  'Playfair Display',
+  'Lora',
+  'PT Serif',
+  'Crimson Text',
+  'EB Garamond',
+  'Cormorant',
+  'Libre Baskerville',
+  'Bitter',
+  'Spectral',
+  // Google Fonts - Display
+  'Lobster',
+  'Righteous',
+  'Pacifico',
+  'Permanent Marker',
+  'Dancing Script',
+  'Indie Flower',
+  'Abril Fatface',
+  'Fredoka',
+  'Caveat',
+  'Satisfy',
 ] as const
 
 export const ZOOM_PRESETS = [

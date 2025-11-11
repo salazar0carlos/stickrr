@@ -11,6 +11,11 @@ export interface BaseElement {
   locked: boolean
   visible: boolean
   opacity: number
+  shadowColor?: string
+  shadowBlur?: number
+  shadowOffsetX?: number
+  shadowOffsetY?: number
+  shadowOpacity?: number
 }
 
 // Text element with typography options
@@ -49,6 +54,12 @@ export interface ImageElement extends BaseElement {
   cropY?: number
   cropWidth?: number
   cropHeight?: number
+  brightness?: number // 0-200, default 100
+  contrast?: number // 0-200, default 100
+  saturation?: number // 0-200, default 100
+  blur?: number // 0-20, default 0
+  flipX?: boolean
+  flipY?: boolean
 }
 
 // Icon element

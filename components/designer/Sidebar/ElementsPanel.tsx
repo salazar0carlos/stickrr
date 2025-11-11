@@ -3,7 +3,7 @@
 import React, { useRef } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
 import type { TextElement, ShapeElement, ImageElement } from '@/types/designer'
-import { Type, Square, Circle, Image as ImageIcon, Minus, Triangle, Star } from 'lucide-react'
+import { Type, Square, Circle, Image as ImageIcon, Minus, Triangle, Star, Hexagon, Pentagon, ArrowRight } from 'lucide-react'
 
 export default function ElementsPanel() {
   const addElement = useDesignerStore((state) => state.addElement)
@@ -155,6 +155,93 @@ export default function ElementsPanel() {
     addElement(newElement)
   }
 
+  const addPentagon = () => {
+    const newElement: ShapeElement = {
+      id: `pentagon-${Date.now()}`,
+      type: 'shape',
+      shapeType: 'polygon',
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+      rotation: 0,
+      zIndex: elements.length,
+      locked: false,
+      visible: true,
+      opacity: 1,
+      fill: '#8B5CF6',
+      stroke: '#7C3AED',
+      strokeWidth: 2,
+      points: [
+        50, 0,
+        98, 38,
+        79, 95,
+        21, 95,
+        2, 38,
+      ],
+    }
+    addElement(newElement)
+  }
+
+  const addHexagon = () => {
+    const newElement: ShapeElement = {
+      id: `hexagon-${Date.now()}`,
+      type: 'shape',
+      shapeType: 'polygon',
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+      rotation: 0,
+      zIndex: elements.length,
+      locked: false,
+      visible: true,
+      opacity: 1,
+      fill: '#06B6D4',
+      stroke: '#0891B2',
+      strokeWidth: 2,
+      points: [
+        25, 0,
+        75, 0,
+        100, 50,
+        75, 100,
+        25, 100,
+        0, 50,
+      ],
+    }
+    addElement(newElement)
+  }
+
+  const addArrow = () => {
+    const newElement: ShapeElement = {
+      id: `arrow-${Date.now()}`,
+      type: 'shape',
+      shapeType: 'polygon',
+      x: 50,
+      y: 100,
+      width: 120,
+      height: 60,
+      rotation: 0,
+      zIndex: elements.length,
+      locked: false,
+      visible: true,
+      opacity: 1,
+      fill: '#EF4444',
+      stroke: '#DC2626',
+      strokeWidth: 2,
+      points: [
+        0, 20,
+        80, 20,
+        80, 0,
+        120, 30,
+        80, 60,
+        80, 40,
+        0, 40,
+      ],
+    }
+    addElement(newElement)
+  }
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -249,21 +336,39 @@ export default function ElementsPanel() {
       description: 'Add a star shape',
       onClick: addStar,
     },
+    {
+      name: 'Pentagon',
+      icon: Pentagon,
+      description: 'Add a pentagon shape',
+      onClick: addPentagon,
+    },
+    {
+      name: 'Hexagon',
+      icon: Hexagon,
+      description: 'Add a hexagon shape',
+      onClick: addHexagon,
+    },
+    {
+      name: 'Arrow',
+      icon: ArrowRight,
+      description: 'Add an arrow shape',
+      onClick: addArrow,
+    },
   ]
 
   return (
     <div className="p-4 space-y-3">
       <h3 className="text-sm font-semibold text-gray-700 mb-3">Elements</h3>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-2">
         {elements_list.map((element) => (
           <button
             key={element.name}
             onClick={element.onClick}
-            className="group flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
+            className="group flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
             title={element.description}
           >
-            <element.icon className="w-6 h-6 text-gray-600 group-hover:text-indigo-600 transition" />
-            <span className="text-xs font-medium text-gray-700 group-hover:text-indigo-700">
+            <element.icon className="w-5 h-5 text-gray-600 group-hover:text-indigo-600 transition" />
+            <span className="text-[10px] font-medium text-gray-700 group-hover:text-indigo-700 text-center leading-tight">
               {element.name}
             </span>
           </button>

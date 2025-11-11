@@ -244,6 +244,93 @@ export default function PropertiesPanel() {
           <div>Current: {Math.round(element.width)} × {Math.round(element.height)}px</div>
         </div>
       </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">Flip</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => updateElement(element.id, { flipX: !element.flipX })}
+            className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
+              element.flipX
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Flip Horizontal
+          </button>
+          <button
+            onClick={() => updateElement(element.id, { flipY: !element.flipY })}
+            className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
+              element.flipY
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Flip Vertical
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Brightness: {element.brightness || 100}%
+        </label>
+        <input
+          type="range"
+          value={element.brightness || 100}
+          onChange={(e) => updateElement(element.id, { brightness: Number(e.target.value) })}
+          className="w-full"
+          min={0}
+          max={200}
+          step={5}
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Contrast: {element.contrast || 100}%
+        </label>
+        <input
+          type="range"
+          value={element.contrast || 100}
+          onChange={(e) => updateElement(element.id, { contrast: Number(e.target.value) })}
+          className="w-full"
+          min={0}
+          max={200}
+          step={5}
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Saturation: {element.saturation || 100}%
+        </label>
+        <input
+          type="range"
+          value={element.saturation || 100}
+          onChange={(e) => updateElement(element.id, { saturation: Number(e.target.value) })}
+          className="w-full"
+          min={0}
+          max={200}
+          step={5}
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Blur: {element.blur || 0}
+        </label>
+        <input
+          type="range"
+          value={element.blur || 0}
+          onChange={(e) => updateElement(element.id, { blur: Number(e.target.value) })}
+          className="w-full"
+          min={0}
+          max={20}
+          step={1}
+        />
+      </div>
+
       <div>
         <label className="block text-xs font-medium text-gray-700 mb-2">Aspect Ratio</label>
         <button
@@ -331,6 +418,70 @@ export default function PropertiesPanel() {
         <div className="text-xs text-gray-500 text-center mt-1">
           {Math.round(selectedElement.opacity * 100)}%
         </div>
+      </div>
+
+      <div className="pt-4 border-t border-gray-200">
+        <h4 className="text-xs font-semibold text-gray-700 mb-3">Shadow</h4>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-2">
+            Shadow Blur: {selectedElement.shadowBlur || 0}px
+          </label>
+          <input
+            type="range"
+            value={selectedElement.shadowBlur || 0}
+            onChange={(e) => updateElement(selectedElement.id, { shadowBlur: Number(e.target.value) })}
+            className="w-full"
+            min={0}
+            max={50}
+            step={1}
+          />
+        </div>
+
+        {(selectedElement.shadowBlur || 0) > 0 && (
+          <>
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-700 mb-2">Shadow Color</label>
+              <input
+                type="color"
+                value={selectedElement.shadowColor || '#000000'}
+                onChange={(e) => updateElement(selectedElement.id, { shadowColor: e.target.value })}
+                className="w-full h-10 rounded-lg border border-gray-300 cursor-pointer"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Offset X: {selectedElement.shadowOffsetX || 0}
+                </label>
+                <input
+                  type="range"
+                  value={selectedElement.shadowOffsetX || 0}
+                  onChange={(e) => updateElement(selectedElement.id, { shadowOffsetX: Number(e.target.value) })}
+                  className="w-full"
+                  min={-50}
+                  max={50}
+                  step={1}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Offset Y: {selectedElement.shadowOffsetY || 0}
+                </label>
+                <input
+                  type="range"
+                  value={selectedElement.shadowOffsetY || 0}
+                  onChange={(e) => updateElement(selectedElement.id, { shadowOffsetY: Number(e.target.value) })}
+                  className="w-full"
+                  min={-50}
+                  max={50}
+                  step={1}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
