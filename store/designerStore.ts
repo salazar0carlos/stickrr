@@ -14,8 +14,8 @@ const initialCanvasState: CanvasState = {
   selectedIds: [],
   zoom: 1,
   pan: { x: 0, y: 0 },
-  canvasWidth: 400,
-  canvasHeight: 300,
+  canvasWidth: 800,
+  canvasHeight: 600,
   backgroundColor: '#ffffff',
   gridVisible: false,
   gridSize: 20,
@@ -205,6 +205,102 @@ export const useDesignerStore = create<DesignerStore>()(
     setSnapToGrid: (snap: boolean) => {
       set((draft) => {
         draft.snapToGrid = snap
+      })
+    },
+
+    setCanvasSize: (width: number, height: number) => {
+      set((draft) => {
+        draft.canvasWidth = width
+        draft.canvasHeight = height
+      })
+    },
+
+    // Alignment operations
+    alignLeft: (ids: string[]) => {
+      if (ids.length === 0) return
+      const selectedElements = get().elements.filter((el) => ids.includes(el.id))
+      const minX = Math.min(...selectedElements.map((el) => el.x))
+
+      set((draft) => {
+        draft.elements.forEach((el) => {
+          if (ids.includes(el.id)) {
+            el.x = minX
+          }
+        })
+      })
+    },
+
+    alignCenter: (ids: string[]) => {
+      if (ids.length === 0) return
+      const selectedElements = get().elements.filter((el) => ids.includes(el.id))
+      const minX = Math.min(...selectedElements.map((el) => el.x))
+      const maxX = Math.max(...selectedElements.map((el) => el.x + el.width))
+      const centerX = (minX + maxX) / 2
+
+      set((draft) => {
+        draft.elements.forEach((el) => {
+          if (ids.includes(el.id)) {
+            el.x = centerX - el.width / 2
+          }
+        })
+      })
+    },
+
+    alignRight: (ids: string[]) => {
+      if (ids.length === 0) return
+      const selectedElements = get().elements.filter((el) => ids.includes(el.id))
+      const maxX = Math.max(...selectedElements.map((el) => el.x + el.width))
+
+      set((draft) => {
+        draft.elements.forEach((el) => {
+          if (ids.includes(el.id)) {
+            el.x = maxX - el.width
+          }
+        })
+      })
+    },
+
+    alignTop: (ids: string[]) => {
+      if (ids.length === 0) return
+      const selectedElements = get().elements.filter((el) => ids.includes(el.id))
+      const minY = Math.min(...selectedElements.map((el) => el.y))
+
+      set((draft) => {
+        draft.elements.forEach((el) => {
+          if (ids.includes(el.id)) {
+            el.y = minY
+          }
+        })
+      })
+    },
+
+    alignMiddle: (ids: string[]) => {
+      if (ids.length === 0) return
+      const selectedElements = get().elements.filter((el) => ids.includes(el.id))
+      const minY = Math.min(...selectedElements.map((el) => el.y))
+      const maxY = Math.max(...selectedElements.map((el) => el.y + el.height))
+      const centerY = (minY + maxY) / 2
+
+      set((draft) => {
+        draft.elements.forEach((el) => {
+          if (ids.includes(el.id)) {
+            el.y = centerY - el.height / 2
+          }
+        })
+      })
+    },
+
+    alignBottom: (ids: string[]) => {
+      if (ids.length === 0) return
+      const selectedElements = get().elements.filter((el) => ids.includes(el.id))
+      const maxY = Math.max(...selectedElements.map((el) => el.y + el.height))
+
+      set((draft) => {
+        draft.elements.forEach((el) => {
+          if (ids.includes(el.id)) {
+            el.y = maxY - el.height
+          }
+        })
       })
     },
 

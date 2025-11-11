@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useRef, useEffect } from 'react'
-import { Text, Rect, Circle, Image as KonvaImage, Transformer } from 'react-konva'
+import { Text, Rect, Circle, Line, Image as KonvaImage, Transformer } from 'react-konva'
 import type { DesignerElement, TextElement, ShapeElement, ImageElement } from '@/types/designer'
 import { useDesignerStore } from '@/store/designerStore'
 
 interface ElementRendererProps {
   element: DesignerElement
   isSelected: boolean
-  onSelect: () => void
+  onSelect: (e: any) => void
   onDragEnd: (e: any) => void
 }
 
@@ -28,6 +28,9 @@ export default function ElementRenderer({
       transformerRef.current.getLayer().batchDraw()
     }
   }, [isSelected])
+
+  // Don't render hidden elements
+  if (!element.visible) return null
 
   const handleTransformEnd = () => {
     const node = shapeRef.current
@@ -112,6 +115,26 @@ export default function ElementRenderer({
               fill={shapeEl.fill}
               stroke={shapeEl.stroke}
               strokeWidth={shapeEl.strokeWidth}
+            />
+          )
+        } else if (shapeEl.shapeType === 'line') {
+          return (
+            <Line
+              {...commonProps}
+              points={shapeEl.points || [0, 0, shapeEl.width, 0]}
+              stroke={shapeEl.stroke}
+              strokeWidth={shapeEl.strokeWidth}
+            />
+          )
+        } else if (shapeEl.shapeType === 'polygon') {
+          return (
+            <Line
+              {...commonProps}
+              points={shapeEl.points || []}
+              fill={shapeEl.fill}
+              stroke={shapeEl.stroke}
+              strokeWidth={shapeEl.strokeWidth}
+              closed={true}
             />
           )
         }

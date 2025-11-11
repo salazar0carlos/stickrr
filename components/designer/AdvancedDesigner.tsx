@@ -5,13 +5,15 @@ import DesignCanvas from './Canvas/DesignCanvas'
 import MainToolbar from './Toolbar/MainToolbar'
 import ElementsPanel from './Sidebar/ElementsPanel'
 import PropertiesPanel from './Sidebar/PropertiesPanel'
+import LayersPanel from './Sidebar/LayersPanel'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Layers, Box } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Layers, Box, Settings } from 'lucide-react'
 
 export default function AdvancedDesigner() {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true)
   const [leftTab, setLeftTab] = useState<'elements' | 'templates'>('elements')
+  const [rightTab, setRightTab] = useState<'properties' | 'layers'>('properties')
 
   const canvasWidth = 800
   const canvasHeight = 600
@@ -107,7 +109,7 @@ export default function AdvancedDesigner() {
           )}
         </button>
 
-        {/* Right Sidebar - Properties Panel */}
+        {/* Right Sidebar - Properties & Layers */}
         <AnimatePresence>
           {rightSidebarOpen && (
             <motion.div
@@ -115,10 +117,42 @@ export default function AdvancedDesigner() {
               animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              className="bg-white border-l border-gray-200 overflow-hidden"
+              className="bg-white border-l border-gray-200 overflow-hidden flex flex-col"
             >
-              <div className="h-full overflow-y-auto">
-                <PropertiesPanel />
+              {/* Tab Selector */}
+              <div className="flex border-b border-gray-200">
+                <button
+                  onClick={() => setRightTab('properties')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition ${
+                    rightTab === 'properties'
+                      ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Properties
+                  </div>
+                </button>
+                <button
+                  onClick={() => setRightTab('layers')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition ${
+                    rightTab === 'layers'
+                      ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    Layers
+                  </div>
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="flex-1 overflow-y-auto">
+                {rightTab === 'properties' && <PropertiesPanel />}
+                {rightTab === 'layers' && <LayersPanel />}
               </div>
             </motion.div>
           )}

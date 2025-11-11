@@ -3,7 +3,7 @@
 import React from 'react'
 import { useDesignerStore } from '@/store/designerStore'
 import type { TextElement, ShapeElement } from '@/types/designer'
-import { Type, Square, Circle, Image as ImageIcon } from 'lucide-react'
+import { Type, Square, Circle, Image as ImageIcon, Minus, Triangle, Star } from 'lucide-react'
 
 export default function ElementsPanel() {
   const addElement = useDesignerStore((state) => state.addElement)
@@ -77,6 +77,83 @@ export default function ElementsPanel() {
     addElement(newElement)
   }
 
+  const addLine = () => {
+    const newElement: ShapeElement = {
+      id: `line-${Date.now()}`,
+      type: 'shape',
+      shapeType: 'line',
+      x: 50,
+      y: 100,
+      width: 200,
+      height: 2,
+      rotation: 0,
+      zIndex: elements.length,
+      locked: false,
+      visible: true,
+      opacity: 1,
+      fill: 'transparent',
+      stroke: '#374151',
+      strokeWidth: 3,
+      points: [0, 0, 200, 0],
+    }
+    addElement(newElement)
+  }
+
+  const addTriangle = () => {
+    const newElement: ShapeElement = {
+      id: `triangle-${Date.now()}`,
+      type: 'shape',
+      shapeType: 'polygon',
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+      rotation: 0,
+      zIndex: elements.length,
+      locked: false,
+      visible: true,
+      opacity: 1,
+      fill: '#10B981',
+      stroke: '#059669',
+      strokeWidth: 2,
+      points: [50, 0, 100, 100, 0, 100],
+    }
+    addElement(newElement)
+  }
+
+  const addStar = () => {
+    const newElement: ShapeElement = {
+      id: `star-${Date.now()}`,
+      type: 'shape',
+      shapeType: 'polygon',
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+      rotation: 0,
+      zIndex: elements.length,
+      locked: false,
+      visible: true,
+      opacity: 1,
+      fill: '#F59E0B',
+      stroke: '#D97706',
+      strokeWidth: 2,
+      points: [
+        50, 0,
+        61, 35,
+        98, 35,
+        68, 57,
+        79, 91,
+        50, 70,
+        21, 91,
+        32, 57,
+        2, 35,
+        39, 35,
+      ],
+    }
+    addElement(newElement)
+  }
+
   const elements_list = [
     {
       name: 'Text',
@@ -95,6 +172,24 @@ export default function ElementsPanel() {
       icon: Circle,
       description: 'Add a circle shape',
       onClick: addCircle,
+    },
+    {
+      name: 'Line',
+      icon: Minus,
+      description: 'Add a line',
+      onClick: addLine,
+    },
+    {
+      name: 'Triangle',
+      icon: Triangle,
+      description: 'Add a triangle shape',
+      onClick: addTriangle,
+    },
+    {
+      name: 'Star',
+      icon: Star,
+      description: 'Add a star shape',
+      onClick: addStar,
     },
   ]
 
