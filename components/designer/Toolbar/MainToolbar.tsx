@@ -1,7 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
+import { LABEL_SIZES, ZOOM_PRESETS, type LabelSizeKey } from '@/lib/designerConstants'
+import ExportDialog, { type ExportOptions } from '../ExportDialog'
 import {
   ZoomIn,
   ZoomOut,
@@ -19,18 +21,33 @@ import {
   AlignVerticalJustifyCenter,
   AlignHorizontalJustifyStart,
   AlignHorizontalJustifyEnd,
+  Maximize2,
+  ChevronDown,
+  Download,
+  Sparkles,
 } from 'lucide-react'
 
-export default function MainToolbar() {
+interface MainToolbarProps {
+  onOpenTemplatePicker?: () => void
+}
+
+export default function MainToolbar({ onOpenTemplatePicker }: MainToolbarProps = {}) {
+  const [showCanvasSizeMenu, setShowCanvasSizeMenu] = useState(false)
+  const [showZoomMenu, setShowZoomMenu] = useState(false)
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [labelName, setLabelName] = useState('')
   const zoom = useDesignerStore((state) => state.zoom)
   const selectedIds = useDesignerStore((state) => state.selectedIds)
   const gridVisible = useDesignerStore((state) => state.gridVisible)
+  const snapToGrid = useDesignerStore((state) => state.snapToGrid)
   const history = useDesignerStore((state) => state.history)
 
   const setZoom = useDesignerStore((state) => state.setZoom)
   const undo = useDesignerStore((state) => state.undo)
   const redo = useDesignerStore((state) => state.redo)
   const toggleGrid = useDesignerStore((state) => state.toggleGrid)
+  const setSnapToGrid = useDesignerStore((state) => state.setSnapToGrid)
   const deleteElements = useDesignerStore((state) => state.deleteElements)
   const duplicateElements = useDesignerStore((state) => state.duplicateElements)
   const moveToFront = useDesignerStore((state) => state.moveToFront)
@@ -41,175 +58,479 @@ export default function MainToolbar() {
   const alignTop = useDesignerStore((state) => state.alignTop)
   const alignMiddle = useDesignerStore((state) => state.alignMiddle)
   const alignBottom = useDesignerStore((state) => state.alignBottom)
+  const canvasWidth = useDesignerStore((state) => state.canvasWidth)
+  const canvasHeight = useDesignerStore((state) => state.canvasHeight)
+  const setCanvasSize = useDesignerStore((state) => state.setCanvasSize)
+  const currentLabelId = useDesignerStore((state) => state.currentLabelId)
+  const currentLabelName = useDesignerStore((state) => state.currentLabelName)
+  const saveLabel = useDesignerStore((state) => state.saveLabel)
+  const isSaving = useDesignerStore((state) => state.isSaving)
 
   const hasSelection = selectedIds.length > 0
   const canUndo = history.past.length > 0
   const canRedo = history.future.length > 0
 
+  const handleCanvasSizeChange = (size: LabelSizeKey) => {
+    const { width, height } = LABEL_SIZES[size]
+    setCanvasSize(width, height)
+    setShowCanvasSizeMenu(false)
+  }
+
+  const handleZoomPreset = (zoomValue: number) => {
+    setZoom(zoomValue)
+    setShowZoomMenu(false)
+  }
+
+  const getCurrentSizeLabel = () => {
+    const sizeEntry = Object.entries(LABEL_SIZES).find(
+      ([_, size]) => size.width === canvasWidth && size.height === canvasHeight
+    )
+    return sizeEntry ? sizeEntry[1].label : 'Custom'
+  }
+
+  const handleExport = async (options: ExportOptions) => {
+    // Get the canvas element from the Konva stage
+    const stage = document.querySelector('canvas')
+    if (!stage) return
+
+    if (options.format === 'pdf') {
+      // Dynamic import jsPDF
+      const { default: jsPDF } = await import('jspdf')
+
+      // Get canvas dimensions in inches (assuming 300 DPI)
+      const widthInches = canvasWidth / 300
+      const heightInches = canvasHeight / 300
+
+      // Convert to PDF points (1 inch = 72 points)
+      const widthPt = widthInches * 72
+      const heightPt = heightInches * 72
+
+      // Create PDF with exact label dimensions
+      const pdf = new jsPDF({
+        orientation: widthInches > heightInches ? 'landscape' : 'portrait',
+        unit: 'pt',
+        format: [widthPt, heightPt],
+      })
+
+      // Add canvas image to PDF
+      const dataURL = (stage as HTMLCanvasElement).toDataURL('image/png', 1.0)
+      pdf.addImage(dataURL, 'PNG', 0, 0, widthPt, heightPt)
+
+      // Download PDF
+      pdf.save(`label-${Date.now()}.pdf`)
+    } else {
+      // Handle PNG/JPEG export
+      const dataURL = (stage as HTMLCanvasElement).toDataURL(
+        `image/${options.format}`,
+        options.quality / 100
+      )
+
+      const link = document.createElement('a')
+      link.download = `label-${Date.now()}.${options.format}`
+      link.href = dataURL
+      link.click()
+    }
+  }
+
+  const handleSave = () => {
+    if (currentLabelId) {
+      // If label already exists, save directly
+      saveLabel()
+    } else {
+      // If new label, show dialog to name it
+      setLabelName(currentLabelName)
+      setShowSaveDialog(true)
+    }
+  }
+
+  const handleSaveWithName = async () => {
+    if (!labelName.trim()) {
+      return
+    }
+    await saveLabel(labelName)
+    setShowSaveDialog(false)
+  }
+
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-      {/* Left side - Main actions */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={undo}
-          disabled={!canUndo}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Undo"
-        >
-          <Undo2 className="w-5 h-5 text-gray-700" />
-        </button>
-        <button
-          onClick={redo}
-          disabled={!canRedo}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Redo"
-        >
-          <Redo2 className="w-5 h-5 text-gray-700" />
-        </button>
+    <div className="bg-white border-b border-gray-200 shadow-sm">
+      {/* Desktop Toolbar - shown on md+ screens */}
+      <div className="hidden md:block px-4 py-2">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left side - Main actions */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Undo"
+            >
+              <Undo2 className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Redo"
+            >
+              <Redo2 className="w-5 h-5 text-gray-700" />
+            </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-2" />
+            <div className="w-px h-6 bg-gray-300 mx-2" />
 
-        <button
-          onClick={() => duplicateElements(selectedIds)}
-          disabled={!hasSelection}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Duplicate"
-        >
-          <Copy className="w-5 h-5 text-gray-700" />
-        </button>
-        <button
-          onClick={() => deleteElements(selectedIds)}
-          disabled={!hasSelection}
-          className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Delete"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
+            <button
+              onClick={() => duplicateElements(selectedIds)}
+              disabled={!hasSelection}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Duplicate"
+            >
+              <Copy className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={() => deleteElements(selectedIds)}
+              disabled={!hasSelection}
+              className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Delete"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-2" />
+            <div className="w-px h-6 bg-gray-300 mx-2" />
 
-        <button
-          onClick={() => moveToFront(selectedIds)}
-          disabled={!hasSelection}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Bring to Front"
-        >
-          <ArrowUpToLine className="w-5 h-5 text-gray-700" />
-        </button>
-        <button
-          onClick={() => moveToBack(selectedIds)}
-          disabled={!hasSelection}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Send to Back"
-        >
-          <ArrowDownToLine className="w-5 h-5 text-gray-700" />
-        </button>
+            <button
+              onClick={() => moveToFront(selectedIds)}
+              disabled={!hasSelection}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Bring to Front"
+            >
+              <ArrowUpToLine className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={() => moveToBack(selectedIds)}
+              disabled={!hasSelection}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Send to Back"
+            >
+              <ArrowDownToLine className="w-5 h-5 text-gray-700" />
+            </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-2" />
+            <div className="w-px h-6 bg-gray-300 mx-2" />
 
-        <button
-          onClick={() => alignLeft(selectedIds)}
-          disabled={selectedIds.length < 2}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Align Left"
-        >
-          <AlignLeft className="w-5 h-5 text-gray-700" />
-        </button>
-        <button
-          onClick={() => alignCenter(selectedIds)}
-          disabled={selectedIds.length < 2}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Align Center"
-        >
-          <AlignCenter className="w-5 h-5 text-gray-700" />
-        </button>
-        <button
-          onClick={() => alignRight(selectedIds)}
-          disabled={selectedIds.length < 2}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Align Right"
-        >
-          <AlignRight className="w-5 h-5 text-gray-700" />
-        </button>
+            <button
+              onClick={() => alignLeft(selectedIds)}
+              disabled={selectedIds.length < 2}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Align Left"
+            >
+              <AlignLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={() => alignCenter(selectedIds)}
+              disabled={selectedIds.length < 2}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Align Center"
+            >
+              <AlignCenter className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={() => alignRight(selectedIds)}
+              disabled={selectedIds.length < 2}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Align Right"
+            >
+              <AlignRight className="w-5 h-5 text-gray-700" />
+            </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-2" />
+            <div className="w-px h-6 bg-gray-300 mx-2" />
 
-        <button
-          onClick={() => alignTop(selectedIds)}
-          disabled={selectedIds.length < 2}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Align Top"
-        >
-          <AlignHorizontalJustifyStart className="w-5 h-5 text-gray-700 rotate-90" />
-        </button>
-        <button
-          onClick={() => alignMiddle(selectedIds)}
-          disabled={selectedIds.length < 2}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Align Middle"
-        >
-          <AlignVerticalJustifyCenter className="w-5 h-5 text-gray-700" />
-        </button>
-        <button
-          onClick={() => alignBottom(selectedIds)}
-          disabled={selectedIds.length < 2}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          title="Align Bottom"
-        >
-          <AlignHorizontalJustifyEnd className="w-5 h-5 text-gray-700 rotate-90" />
-        </button>
+            <button
+              onClick={() => alignTop(selectedIds)}
+              disabled={selectedIds.length < 2}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Align Top"
+            >
+              <AlignHorizontalJustifyStart className="w-5 h-5 text-gray-700 rotate-90" />
+            </button>
+            <button
+              onClick={() => alignMiddle(selectedIds)}
+              disabled={selectedIds.length < 2}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Align Middle"
+            >
+              <AlignVerticalJustifyCenter className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={() => alignBottom(selectedIds)}
+              disabled={selectedIds.length < 2}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Align Bottom"
+            >
+              <AlignHorizontalJustifyEnd className="w-5 h-5 text-gray-700 rotate-90" />
+            </button>
+          </div>
+
+          {/* Center - Canvas Size & Zoom controls */}
+          <div className="flex items-center gap-1.5">
+            {/* Canvas Size Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setShowCanvasSizeMenu(!showCanvasSizeMenu)}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition text-xs font-medium text-gray-700 border border-gray-300"
+                title="Canvas Size"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>{getCurrentSizeLabel()}</span>
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              {showCanvasSizeMenu && (
+                <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
+                  {Object.entries(LABEL_SIZES).map(([key, size]) => (
+                    <button
+                      key={key}
+                      onClick={() => handleCanvasSizeChange(key as LabelSizeKey)}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition"
+                    >
+                      {size.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-5 bg-gray-300 mx-1" />
+
+            {/* Zoom Controls */}
+            <button
+              onClick={() => setZoom(zoom - 0.1)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition"
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-4 h-4 text-gray-700" />
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setShowZoomMenu(!showZoomMenu)}
+                className="min-w-[60px] px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition text-xs font-medium text-gray-700 border border-gray-300"
+                title="Zoom Level"
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              {showZoomMenu && (
+                <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
+                  {ZOOM_PRESETS.map((preset) => (
+                    <button
+                      key={preset.value}
+                      onClick={() => handleZoomPreset(preset.value)}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setZoom(zoom + 0.1)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition"
+              title="Zoom In"
+            >
+              <ZoomIn className="w-4 h-4 text-gray-700" />
+            </button>
+
+            <div className="w-px h-5 bg-gray-300 mx-1" />
+
+            <button
+              onClick={toggleGrid}
+              className={`p-1.5 rounded-lg transition ${
+                gridVisible ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-700'
+              }`}
+              title="Toggle Grid"
+            >
+              <Grid3x3 className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => setSnapToGrid(!snapToGrid)}
+              className={`px-2.5 py-1.5 rounded-lg transition text-xs font-medium ${
+                snapToGrid ? 'bg-indigo-100 text-indigo-600 border border-indigo-300' : 'hover:bg-gray-100 text-gray-700 border border-gray-300'
+              }`}
+              title="Snap to Grid"
+            >
+              Snap
+            </button>
+          </div>
+
+          {/* Right side - Templates, Export & Save */}
+          <div className="flex items-center gap-1.5">
+            {onOpenTemplatePicker && (
+              <button
+                onClick={onOpenTemplatePicker}
+                className="flex items-center gap-1.5 bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition text-xs font-medium border border-purple-200"
+                title="Browse Templates"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Templates</span>
+              </button>
+            )}
+            <button
+              onClick={() => setShowExportDialog(true)}
+              className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition text-xs font-medium"
+              title="Export Design"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export</span>
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition text-xs font-medium shadow-sm"
+              title="Save Design"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{isSaving ? 'Saving...' : 'Save'}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Center - Zoom controls */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setZoom(zoom - 0.1)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition"
-          title="Zoom Out"
-        >
-          <ZoomOut className="w-5 h-5 text-gray-700" />
-        </button>
-        <span className="text-sm font-medium text-gray-700 min-w-[60px] text-center">
-          {Math.round(zoom * 100)}%
-        </span>
-        <button
-          onClick={() => setZoom(zoom + 0.1)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition"
-          title="Zoom In"
-        >
-          <ZoomIn className="w-5 h-5 text-gray-700" />
-        </button>
-        <button
-          onClick={() => setZoom(1)}
-          className="px-3 py-1 rounded-lg hover:bg-gray-100 transition text-sm font-medium text-gray-700"
-          title="Reset Zoom"
-        >
-          Fit
-        </button>
+      {/* Mobile Toolbar - shown on sm screens and below */}
+      <div className="md:hidden px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left - Essential actions */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Undo"
+            >
+              <Undo2 className="w-4 h-4 text-gray-700" />
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Redo"
+            >
+              <Redo2 className="w-4 h-4 text-gray-700" />
+            </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-2" />
+            {hasSelection && (
+              <>
+                <div className="w-px h-4 bg-gray-300 mx-1" />
+                <button
+                  onClick={() => deleteElements(selectedIds)}
+                  className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
 
-        <button
-          onClick={toggleGrid}
-          className={`p-2 rounded-lg transition ${
-            gridVisible ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-700'
-          }`}
-          title="Toggle Grid"
-        >
-          <Grid3x3 className="w-5 h-5" />
-        </button>
+          {/* Center - Zoom */}
+          <div className="relative">
+            <button
+              onClick={() => setShowZoomMenu(!showZoomMenu)}
+              className="min-w-[45px] px-2 py-1 rounded-lg hover:bg-gray-100 transition text-xs font-medium text-gray-700 border border-gray-300"
+              title="Zoom Level"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            {showZoomMenu && (
+              <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
+                {ZOOM_PRESETS.map((preset) => (
+                  <button
+                    key={preset.value}
+                    onClick={() => handleZoomPreset(preset.value)}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition whitespace-nowrap"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right - Templates, Export & Save */}
+          <div className="flex items-center gap-1">
+            {onOpenTemplatePicker && (
+              <button
+                onClick={onOpenTemplatePicker}
+                className="p-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 transition border border-purple-200"
+                title="Templates"
+              >
+                <Sparkles className="w-4 h-4 text-purple-700" />
+              </button>
+            )}
+            <button
+              onClick={() => setShowExportDialog(true)}
+              className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition"
+              title="Export"
+            >
+              <Download className="w-4 h-4 text-gray-700" />
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
+              title="Save"
+            >
+              <Save className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Right side - Save */}
-      <div className="flex items-center gap-2">
-        <button
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm"
-          title="Save Design"
-        >
-          <Save className="w-4 h-4" />
-          Save
-        </button>
-      </div>
+      {/* Export Dialog */}
+      {showExportDialog && (
+        <ExportDialog
+          onClose={() => setShowExportDialog(false)}
+          onExport={handleExport}
+        />
+      )}
+
+      {/* Save Dialog */}
+      {showSaveDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Save Label</h2>
+              <p className="text-sm text-gray-600 mb-4">Give your label a name so you can find it later.</p>
+              <input
+                type="text"
+                value={labelName}
+                onChange={(e) => setLabelName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveWithName()
+                  }
+                }}
+                placeholder="Enter label name..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                autoFocus
+              />
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowSaveDialog(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveWithName}
+                  disabled={!labelName.trim() || isSaving}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

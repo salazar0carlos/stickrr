@@ -4,16 +4,22 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { auth } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 import { Menu, X, LogOut } from 'lucide-react'
 
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    auth.getUser().then(setUser)
+    auth.getUser()
+      .then(setUser)
+      .catch((error) => {
+        console.error('Error fetching user:', error)
+        setUser(null)
+      })
   }, [])
 
   const handleSignOut = async () => {
@@ -35,20 +41,12 @@ export default function Navbar() {
             {user ? (
               <>
                 <Link
-                  href="/designer"
+                  href="/studio"
                   className={`${
-                    pathname === '/designer' ? 'text-indigo-600' : 'text-gray-700'
-                  } hover:text-indigo-600 transition`}
+                    pathname === '/studio' ? 'text-indigo-600' : 'text-gray-700'
+                  } hover:text-indigo-600 transition font-medium`}
                 >
-                  Designer
-                </Link>
-                <Link
-                  href="/advanced-designer"
-                  className={`${
-                    pathname === '/advanced-designer' ? 'text-indigo-600' : 'text-gray-700'
-                  } hover:text-indigo-600 transition`}
-                >
-                  Advanced Designer
+                  ✨ Studio
                 </Link>
                 <Link
                   href="/library"
@@ -92,7 +90,7 @@ export default function Navbar() {
                   href="/signup"
                   className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-sm font-medium"
                 >
-                  Sign Up
+                  Start Creating
                 </Link>
               </>
             )}
@@ -115,18 +113,11 @@ export default function Navbar() {
             {user ? (
               <>
                 <Link
-                  href="/designer"
-                  className="block text-gray-700 hover:text-indigo-600 transition py-3 px-2 rounded-lg hover:bg-gray-50"
+                  href="/studio"
+                  className="block text-gray-700 hover:text-indigo-600 transition py-3 px-2 rounded-lg hover:bg-gray-50 font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Designer
-                </Link>
-                <Link
-                  href="/advanced-designer"
-                  className="block text-gray-700 hover:text-indigo-600 transition py-3 px-2 rounded-lg hover:bg-gray-50"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Advanced Designer
+                  ✨ Studio
                 </Link>
                 <Link
                   href="/library"
@@ -174,7 +165,7 @@ export default function Navbar() {
                   className="block bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-center shadow-sm font-medium mt-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Sign Up
+                  Start Creating
                 </Link>
               </>
             )}

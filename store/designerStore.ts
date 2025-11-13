@@ -1,12 +1,23 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { DesignerElement, CanvasState, DesignerActions } from '@/types/designer'
+import { labels, auth } from '@/lib/supabase'
+import toast from 'react-hot-toast'
 
 interface DesignerStore extends CanvasState, DesignerActions {
   history: {
     past: CanvasState[]
     future: CanvasState[]
   }
+  currentLabelId: string | null
+  currentLabelName: string
+  isSaving: boolean
+  isLoading: boolean
+  saveLabel: (name?: string) => Promise<void>
+  loadLabel: (labelId: string) => Promise<void>
+  createNewLabel: () => void
+  getCanvasState: () => CanvasState
+  setCanvasState: (state: CanvasState) => void
 }
 
 const initialCanvasState: CanvasState = {
@@ -46,6 +57,10 @@ export const useDesignerStore = create<DesignerStore>()(
       past: [],
       future: [],
     },
+    currentLabelId: null,
+    currentLabelName: 'Untitled Label',
+    isSaving: false,
+    isLoading: false,
 
     // Element operations
     addElement: (element: DesignerElement) => {
@@ -365,6 +380,155 @@ export const useDesignerStore = create<DesignerStore>()(
         Object.assign(draft, initialCanvasState)
         draft.history = { past: [], future: [] }
       })
+    },
+
+    // Save/Load operations
+    getCanvasState: () => {
+      const state = get()
+      return {
+        elements: state.elements,
+        selectedIds: state.selectedIds,
+        zoom: state.zoom,
+        pan: state.pan,
+        canvasWidth: state.canvasWidth,
+        canvasHeight: state.canvasHeight,
+        backgroundColor: state.backgroundColor,
+        gridVisible: state.gridVisible,
+        gridSize: state.gridSize,
+        snapToGrid: state.snapToGrid,
+      }
+    },
+
+    setCanvasState: (canvasState: CanvasState) => {
+      set((draft) => {
+        Object.assign(draft, canvasState)
+        // Clear selection after loading
+        draft.selectedIds = []
+      })
+    },
+
+    saveLabel: async (name?: string) => {
+      const state = get()
+
+      try {
+        set((draft) => {
+          draft.isSaving = true
+        })
+
+        // Get current user
+        const user = await auth.getUser()
+        if (!user) {
+          toast.error('You must be logged in to save labels')
+          return
+        }
+
+        // Use provided name or current name
+        const labelName = name || state.currentLabelName
+
+        // Get current canvas state
+        const canvasState = state.getCanvasState()
+
+        // If we have a currentLabelId, update existing label
+        if (state.currentLabelId) {
+          const { data, error } = await labels.update(state.currentLabelId, {
+            name: labelName,
+            canvas_data: canvasState,
+          })
+
+          if (error) {
+            console.error('Error updating label:', error)
+            toast.error('Failed to save label')
+            return
+          }
+
+          toast.success('Label saved successfully!')
+        } else {
+          // Create new label
+          const { data, error } = await labels.create({
+            user_id: user.id,
+            name: labelName,
+            canvas_data: canvasState,
+          })
+
+          if (error) {
+            console.error('Error creating label:', error)
+            toast.error('Failed to save label')
+            return
+          }
+
+          // Update current label ID and name
+          set((draft) => {
+            draft.currentLabelId = data.id
+            draft.currentLabelName = labelName
+          })
+
+          toast.success('Label saved successfully!')
+        }
+      } catch (error) {
+        console.error('Error saving label:', error)
+        toast.error('Failed to save label')
+      } finally {
+        set((draft) => {
+          draft.isSaving = false
+        })
+      }
+    },
+
+    loadLabel: async (labelId: string) => {
+      try {
+        set((draft) => {
+          draft.isLoading = true
+        })
+
+        // Fetch label from database
+        const { data, error } = await labels.getById(labelId)
+
+        if (error || !data) {
+          console.error('Error loading label:', error)
+          toast.error('Failed to load label')
+          return
+        }
+
+        // Deserialize canvas_data and populate store
+        if (data.canvas_data) {
+          const canvasState = data.canvas_data as CanvasState
+
+          set((draft) => {
+            // Set canvas state
+            Object.assign(draft, canvasState)
+            // Set label metadata
+            draft.currentLabelId = data.id
+            draft.currentLabelName = data.name
+            // Clear selection and history
+            draft.selectedIds = []
+            draft.history = { past: [], future: [] }
+          })
+
+          toast.success(`Loaded "${data.name}"`)
+        } else {
+          toast.error('Label has no canvas data')
+        }
+      } catch (error) {
+        console.error('Error loading label:', error)
+        toast.error('Failed to load label')
+      } finally {
+        set((draft) => {
+          draft.isLoading = false
+        })
+      }
+    },
+
+    createNewLabel: () => {
+      set((draft) => {
+        // Reset canvas to initial state
+        Object.assign(draft, initialCanvasState)
+        // Reset metadata
+        draft.currentLabelId = null
+        draft.currentLabelName = 'Untitled Label'
+        // Clear history
+        draft.history = { past: [], future: [] }
+      })
+      toast.success('Created new label')
     },
   }))
 )

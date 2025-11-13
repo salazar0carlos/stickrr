@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDesignerStore } from '@/store/designerStore'
+import type { DesignerElement } from '@/types/designer'
 
 export function useKeyboardShortcuts() {
   const selectedIds = useDesignerStore((state) => state.selectedIds)
@@ -9,6 +10,12 @@ export function useKeyboardShortcuts() {
   const redo = useDesignerStore((state) => state.redo)
   const selectElement = useDesignerStore((state) => state.selectElement)
   const elements = useDesignerStore((state) => state.elements)
+  const addElement = useDesignerStore((state) => state.addElement)
+  const saveLabel = useDesignerStore((state) => state.saveLabel)
+  const currentLabelId = useDesignerStore((state) => state.currentLabelId)
+
+  // Use ref to store clipboard data (can't use localStorage for complex objects)
+  const clipboardRef = useRef<DesignerElement[]>([])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,6 +50,22 @@ export function useKeyboardShortcuts() {
         redo()
       }
 
+      // Save (Ctrl/Cmd + S)
+      if (cmdOrCtrl && e.key === 's') {
+        e.preventDefault()
+        // If we have a currentLabelId, save directly
+        // Otherwise, the save button will handle showing the dialog
+        if (currentLabelId) {
+          saveLabel()
+        } else {
+          // Trigger save button click to show dialog
+          const saveButton = document.querySelector('[title="Save Design"]') as HTMLButtonElement
+          if (saveButton) {
+            saveButton.click()
+          }
+        }
+      }
+
       // Duplicate (Ctrl/Cmd + D)
       if (cmdOrCtrl && e.key === 'd' && selectedIds.length > 0) {
         e.preventDefault()
@@ -55,6 +78,36 @@ export function useKeyboardShortcuts() {
         useDesignerStore.getState().selectElements(elements.map((el) => el.id))
       }
 
+      // Copy (Ctrl/Cmd + C)
+      if (cmdOrCtrl && e.key === 'c' && selectedIds.length > 0) {
+        e.preventDefault()
+        const selectedElements = elements.filter((el) => selectedIds.includes(el.id))
+        clipboardRef.current = selectedElements.map((el) => ({ ...el }))
+      }
+
+      // Paste (Ctrl/Cmd + V)
+      if (cmdOrCtrl && e.key === 'v' && clipboardRef.current.length > 0) {
+        e.preventDefault()
+        const newElements = clipboardRef.current.map((el) => ({
+          ...el,
+          id: `${el.type}-${Date.now()}-${Math.random()}`,
+          x: el.x + 20,
+          y: el.y + 20,
+        }))
+
+        // Clear current selection and add new elements
+        useDesignerStore.getState().clearSelection()
+        newElements.forEach((el) => addElement(el))
+      }
+
+      // Cut (Ctrl/Cmd + X)
+      if (cmdOrCtrl && e.key === 'x' && selectedIds.length > 0) {
+        e.preventDefault()
+        const selectedElements = elements.filter((el) => selectedIds.includes(el.id))
+        clipboardRef.current = selectedElements.map((el) => ({ ...el }))
+        deleteElements(selectedIds)
+      }
+
       // Deselect (Escape)
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -64,5 +117,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedIds, deleteElements, duplicateElements, undo, redo, selectElement, elements])
+  }, [selectedIds, deleteElements, duplicateElements, undo, redo, selectElement, elements, addElement, saveLabel, currentLabelId])
 }
